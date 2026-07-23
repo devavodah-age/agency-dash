@@ -1,177 +1,149 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, RefreshCw, Plug } from 'lucide-react'
+import { CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL
 
 export default function Integrations() {
-  const [clients, setClients] = useState([])
-  const [testing, setTesting] = useState({})
-  const [status, setStatus] = useState({})
-  const [editing, setEditing] = useState({})
-  const [saving, setSaving] = useState({})
+  const [bmId, setBmId] = useState('')
+  const [token, setToken] = useState('')
+  const [hasToken, setHasToken] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [status, setStatus] = useState(null)
+  const [saved, setSaved] = useState(false)
 
-  const token = localStorage.getItem('token')
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-
-  useEffect(() => {
-    fetch(`${API}/clients`, { headers })
-      .then(r => r.json())
-      .then(setClients)
-  }, [])
-
-  const testConnection = async (clientId) => {
-    setTesting(t => ({ ...t, [clientId]: true }))
-    setStatus(s => ({ ...s, [clientId]: null }))
-    try {
-      const r = await fetch(`${API}/meta/test/${clientId}`, { headers })
-      const data = await r.json()
-      setStatus(s => ({ ...s, [clientId]: r.ok ? { ok: true, name: data.account_name } : { ok: false, msg: data.error } }))
-    } catch {
-      setStatus(s => ({ ...s, [clientId]: { ok: false, msg: 'Erro de conexão' } }))
-    }
-    setTesting(t => ({ ...t, [clientId]: false }))
+  const authHeaders = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('token')}`
   }
 
-  const saveCredentials = async (client) => {
-    setSaving(s => ({ ...s, [client.id]: true }))
-    const ed = editing[client.id] || {}
-    await fetch(`${API}/clients/${client.id}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({
-        name: client.name,
-        email: client.email,
-        meta_account_id: ed.meta_account_id ?? client.meta_account_id,
-        meta_access_token: ed.meta_access_token ?? client.meta_access_token,
+  useEffect(() => {
+    fetch(`${API}/settings/meta`, { headers: authHeaders })
+      .then(r => r.json())
+      .then(data => {
+        setBmId(data.meta_bm_id || '')
+        setHasToken(data.has_token)
       })
+  }, [])
+
+  const save = async () => {
+    setSaving(true); setSaved(false); setStatus(null)
+    const r = await fetch(`${API}/settings/meta`, {
+      method: 'PUT',
+      headers: authHeaders,
+      body: JSON.stringify({ meta_bm_id: bmId, meta_access_token: token })
     })
-    setClients(cs => cs.map(c => c.id === client.id
-      ? { ...c, ...ed }
-      : c
-    ))
-    setEditing(e => ({ ...e, [client.id]: undefined }))
-    setSaving(s => ({ ...s, [client.id]: false }))
-    await testConnection(client.id)
+    setSaving(false)
+    if (r.ok) { setSaved(true); setHasToken(true); setToken('') }
+  }
+
+  const test = async () => {
+    setTesting(true); setStatus(null)
+    const r = await fetch(`${API}/settings/meta/test`, { headers: authHeaders })
+    const data = await r.json()
+    setStatus(r.ok ? { ok: true, name: data.bm_name } : { ok: false, msg: data.error })
+    setTesting(false)
   }
 
   const inputStyle = {
     width: '100%', background: '#0e0e0e', border: '1px solid #1e1e1e',
-    borderRadius: '8px', padding: '10px 12px', color: 'white',
+    borderRadius: '8px', padding: '11px 14px', color: 'white',
     fontSize: '13px', outline: 'none', fontFamily: 'monospace'
   }
 
   return (
-    <div style={{ padding: '32px', maxWidth: '860px' }}>
-      <div style={{ marginBottom: '28px' }}>
+    <div style={{ padding: '32px', maxWidth: '600px' }}>
+      <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'white', marginBottom: '6px' }}>
           Integrações
         </h1>
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>
-          Conecte as contas Meta Ads de cada cliente
+          Configure as credenciais da sua Business Manager. O token será usado para todos os clientes.
         </p>
       </div>
 
-      {clients.length === 0 && (
-        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', marginTop: '40px', textAlign: 'center' }}>
-          Nenhum cliente cadastrado ainda. Crie clientes primeiro.
+      {/* Meta Ads Card */}
+      <div style={{ background: '#0e0e0e', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <div style={{ width: '36px', height: '36px', background: '#1877f2', borderRadius: '8px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900,
+            fontSize: '16px', color: 'white' }}>f</div>
+          <div>
+            <p style={{ fontWeight: 600, color: 'white', fontSize: '15px' }}>Meta Business Manager</p>
+            <p style={{ fontSize: '12px', color: hasToken ? '#4ade80' : 'rgba(255,255,255,0.3)', marginTop: '2px' }}>
+              {hasToken ? 'Token configurado' : 'Não configurado'}
+            </p>
+          </div>
         </div>
-      )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {clients.map(client => {
-          const ed = editing[client.id] || {}
-          const st = status[client.id]
-          const hasCredentials = client.meta_account_id && client.meta_access_token
-          const isEdited = ed.meta_account_id !== undefined || ed.meta_access_token !== undefined
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)',
+              marginBottom: '7px', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Business Manager ID
+            </label>
+            <input
+              style={inputStyle}
+              placeholder="Ex: 123456789"
+              value={bmId}
+              onChange={e => { setBmId(e.target.value); setSaved(false) }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)',
+              marginBottom: '7px', letterSpacing: '2px', textTransform: 'uppercase' }}>
+              Access Token {hasToken && <span style={{ color: '#4ade80' }}>— já salvo (preencha para atualizar)</span>}
+            </label>
+            <input
+              style={inputStyle}
+              type="password"
+              placeholder={hasToken ? '••••••••••••• (deixe vazio para manter)' : 'EAAxxxxxxxx...'}
+              value={token}
+              onChange={e => { setToken(e.target.value); setSaved(false) }}
+            />
+          </div>
+        </div>
 
-          return (
-            <div key={client.id} style={{
-              background: '#0e0e0e', border: '1px solid #1e1e1e',
-              borderRadius: '12px', padding: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div>
-                  <p style={{ fontWeight: 600, color: 'white', fontSize: '15px' }}>{client.name}</p>
-                  {client.email && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>{client.email}</p>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {st && (
-                    st.ok
-                      ? <div style={{ display:'flex', alignItems:'center', gap:'6px', color:'#4ade80', fontSize:'12px' }}>
-                          <CheckCircle size={14}/> {st.name}
-                        </div>
-                      : <div style={{ display:'flex', alignItems:'center', gap:'6px', color:'#f87171', fontSize:'12px' }}>
-                          <XCircle size={14}/> {st.msg}
-                        </div>
-                  )}
-                  {!st && hasCredentials && (
-                    <div style={{ display:'flex', alignItems:'center', gap:'6px', color:'rgba(255,255,255,0.3)', fontSize:'12px' }}>
-                      <Plug size={14}/> Configurado
-                    </div>
-                  )}
-                </div>
-              </div>
+        {status && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px',
+            color: status.ok ? '#4ade80' : '#f87171', fontSize: '13px', marginBottom: '16px' }}>
+            {status.ok ? <CheckCircle size={15}/> : <XCircle size={15}/>}
+            {status.ok ? `Conectado: ${status.name}` : status.msg}
+          </div>
+        )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                <div>
-                  <label style={{ display:'block', fontSize:'10px', color:'rgba(255,255,255,0.35)',
-                    marginBottom:'6px', letterSpacing:'2px', textTransform:'uppercase' }}>
-                    Account ID
-                  </label>
-                  <input
-                    style={inputStyle}
-                    placeholder="Ex: 1234567890"
-                    defaultValue={client.meta_account_id || ''}
-                    onChange={e => setEditing(ed => ({ ...ed, [client.id]: { ...(ed[client.id]||{}), meta_account_id: e.target.value } }))}
-                  />
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:'10px', color:'rgba(255,255,255,0.35)',
-                    marginBottom:'6px', letterSpacing:'2px', textTransform:'uppercase' }}>
-                    Access Token
-                  </label>
-                  <input
-                    style={inputStyle}
-                    placeholder="EAAxxxxxxxx..."
-                    defaultValue={client.meta_access_token || ''}
-                    type="password"
-                    onChange={e => setEditing(ed => ({ ...ed, [client.id]: { ...(ed[client.id]||{}), meta_access_token: e.target.value } }))}
-                  />
-                </div>
-              </div>
+        {saved && !status && (
+          <p style={{ fontSize: '13px', color: '#4ade80', marginBottom: '16px' }}>Salvo com sucesso!</p>
+        )}
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {isEdited && (
-                  <button
-                    onClick={() => saveCredentials(client)}
-                    disabled={saving[client.id]}
-                    style={{
-                      background: 'white', color: 'black', border: 'none',
-                      borderRadius: '8px', padding: '8px 18px', fontSize: '12px',
-                      fontWeight: 700, cursor: 'pointer', letterSpacing: '1px',
-                      opacity: saving[client.id] ? 0.6 : 1
-                    }}>
-                    {saving[client.id] ? 'Salvando...' : 'Salvar'}
-                  </button>
-                )}
-                {hasCredentials && !isEdited && (
-                  <button
-                    onClick={() => testConnection(client.id)}
-                    disabled={testing[client.id]}
-                    style={{
-                      background: 'transparent', color: 'rgba(255,255,255,0.6)',
-                      border: '1px solid #1e1e1e', borderRadius: '8px',
-                      padding: '8px 16px', fontSize: '12px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '6px'
-                    }}>
-                    <RefreshCw size={12} style={{ animation: testing[client.id] ? 'spin 1s linear infinite' : 'none' }}/>
-                    {testing[client.id] ? 'Testando...' : 'Testar conexão'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={save} disabled={saving || (!bmId || (!token && !hasToken))}
+            style={{ background: 'white', color: 'black', border: 'none', borderRadius: '8px',
+              padding: '10px 20px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+              letterSpacing: '1px', opacity: (saving || (!bmId || (!token && !hasToken))) ? 0.4 : 1 }}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+
+          {hasToken && (
+            <button onClick={test} disabled={testing}
+              style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)',
+                border: '1px solid #1e1e1e', borderRadius: '8px', padding: '10px 16px',
+                fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <RefreshCw size={12} style={{ animation: testing ? 'spin 1s linear infinite' : 'none' }}/>
+              {testing ? 'Testando...' : 'Testar conexão'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ marginTop: '20px', background: '#0e0e0e', border: '1px solid #1e1e1e',
+        borderRadius: '12px', padding: '16px' }}>
+        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: '1.7' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Como obter o token:</strong><br/>
+          1. Acesse developers.facebook.com → Graph API Explorer<br/>
+          2. Selecione sua BM e gere um token com permissões <code style={{color:'#60a5fa'}}>ads_read</code> e <code style={{color:'#60a5fa'}}>business_management</code><br/>
+          3. Para token de longa duração, use o endpoint de extensão de token
+        </p>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
