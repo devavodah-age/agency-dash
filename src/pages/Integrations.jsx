@@ -84,7 +84,7 @@ export default function Integrations() {
             </label>
             <input
               style={inputStyle}
-              placeholder="Ex: 123456789"
+              placeholder="Ex: 123456789" autoComplete="off"
               value={bmId}
               onChange={e => { setBmId(e.target.value); setSaved(false) }}
             />
@@ -96,7 +96,7 @@ export default function Integrations() {
             </label>
             <input
               style={inputStyle}
-              type="password"
+              type="password" autoComplete="new-password"
               placeholder={hasToken ? '••••••••••••• (deixe vazio para manter)' : 'EAAxxxxxxxx...'}
               value={token}
               onChange={e => { setToken(e.target.value); setSaved(false) }}
