@@ -91,7 +91,7 @@ export default function Login() {
   return (
     <div style={{ minHeight:'100vh', display:'flex', background:'#060606' }}>
       {/* Esquerda */}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
+      <div className='login-left' style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
         borderRight:'1px solid #111', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', width:'480px', height:'480px', borderRadius:'50%',
           background:'radial-gradient(circle, rgba(255,255,255,0.025) 0%, transparent 70%)',
@@ -100,7 +100,7 @@ export default function Login() {
       </div>
 
       {/* Direita */}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 32px' }}>
+      <div className='login-right' style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 32px' }}>
         <div style={{ width:'100%', maxWidth:'380px' }}>
           <div style={{ marginBottom:'32px' }}>
             <h2 style={{ fontSize:'22px', fontWeight:700, color:'white', marginBottom:'8px' }}>
