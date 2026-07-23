@@ -139,8 +139,15 @@ export default function Login() {
             </button>
           </form>
 
+          <p style={{ textAlign:'center', fontSize:'12px', color:'rgba(255,255,255,0.2)', marginTop:'28px' }}>
+            Não tem conta?{' '}
+            <a href='/register' style={{ color:'rgba(255,255,255,0.6)', textDecoration:'none', fontWeight:600 }}>
+              Criar conta
+            </a>
+          </p>
+
           <p style={{ textAlign:'center', fontSize:'11px',
-            color:'rgba(255,255,255,0.12)', marginTop:'32px' }}>
+            color:'rgba(255,255,255,0.12)', marginTop:'16px' }}>
             Agência Avodah © 2026</p>
         </div>
       </div>
