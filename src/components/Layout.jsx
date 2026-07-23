@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, LogOut, Plug } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/clients', icon: Users, label: 'Clientes' },
+  { to: '/integrations', icon: Plug, label: 'Integrações' },
 ]
 
 const SEGMENTS = [
