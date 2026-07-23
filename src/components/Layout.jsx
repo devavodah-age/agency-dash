@@ -38,9 +38,9 @@ function SidebarLogo() {
         </defs>
         {SEGMENTS.map((s, i) => (
           <g key={i}>
-            <path d={s.d} stroke="rgba(167,139,250,0.15)" strokeWidth="6" strokeLinecap="round" filter="url(#g2)"
+            <path d={s.d} stroke="rgba(255,255,255,0.1)" strokeWidth="6" strokeLinecap="round" filter="url(#g2)"
               style={{ strokeDasharray:s.len, strokeDashoffset:s.len, animation:`.9s ease forwards draw-l`, animationDelay:`${s.delay}s` }}/>
-            <path d={s.d} stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" filter="url(#g1)"
+            <path d={s.d} stroke="white" strokeWidth="2.5" strokeLinecap="round" filter="url(#g1)"
               style={{ strokeDasharray:s.len, strokeDashoffset:s.len, animation:`.9s ease forwards draw-l`, animationDelay:`${s.delay}s` }}/>
           </g>
         ))}
