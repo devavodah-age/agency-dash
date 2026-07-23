@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 const API = import.meta.env.VITE_API_URL
 
 export default function Register() {
-  const [form, setForm] = useState({ name:'', email:'', password:'', register_key:'' })
+  const [form, setForm] = useState({ name:'', email:'', password:'' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -62,8 +62,7 @@ export default function Register() {
               { label:'Nome completo', key:'name', type:'text', placeholder:'Seu nome' },
               { label:'Email', key:'email', type:'email', placeholder:'seu@email.com' },
               { label:'Senha', key:'password', type:'password', placeholder:'••••••••' },
-              { label:'Chave de cadastro', key:'register_key', type:'password', placeholder:'Fornecida pelo administrador' },
-            ].map(({ label, key, type, placeholder }) => (
+].map(({ label, key, type, placeholder }) => (
               <div key={key}>
                 <label style={{ display:'block', fontSize:'10px', color:'rgba(255,255,255,0.35)',
                   marginBottom:'8px', letterSpacing:'2px', textTransform:'uppercase' }}>{label}</label>
