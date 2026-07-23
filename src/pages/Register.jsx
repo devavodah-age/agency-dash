@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 const API = import.meta.env.VITE_API_URL
 
 export default function Register() {
-  const [form, setForm] = useState({ name:'', email:'', password:'' })
+  const [form, setForm] = useState({ name:'', email:'', password:'', confirm:'' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -15,7 +15,9 @@ export default function Register() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSubmit = async e => {
-    e.preventDefault(); setError(''); setLoading(true)
+    e.preventDefault(); setError(''); 
+    if (form.password !== form.confirm) { setError('As senhas não coincidem'); return }
+    setLoading(true)
     try {
       const r = await fetch(`${API}/auth/register`, {
         method: 'POST',
