@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const API = import.meta.env.VITE_API_URL
 
@@ -9,6 +10,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -22,8 +24,9 @@ export default function Register() {
       })
       const data = await r.json()
       if (!r.ok) { setError(data.error || 'Erro ao criar conta'); setLoading(false); return }
-      setSuccess(true)
-      setTimeout(() => navigate('/login'), 2000)
+      // auto-login after register
+      await login(form.email, form.password)
+      navigate('/')
     } catch { setError('Erro de conexão') }
     setLoading(false)
   }
