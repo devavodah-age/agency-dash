@@ -15,11 +15,14 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-surface">
-      {/* Sidebar */}
       <aside className="w-60 flex flex-col border-r border-surface-border bg-surface-card">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-surface-border flex justify-center">
-          <img src="/logo.jpg" alt="Agência Avodah" className="w-32 h-32 object-contain rounded-xl" />
+        <div className="p-4 border-b border-surface-border">
+          <img
+            src="/logo.jpg"
+            alt="Agência Avodah"
+            className="w-28 h-28 object-cover rounded-xl"
+          />
         </div>
 
         {/* Nav */}
@@ -59,7 +62,6 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
