@@ -14,3 +14,26 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #1f1f1f; border-radius: 2px; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar { display: none !important; }
+  .login-left { display: none !important; }
+  .login-right { flex: 1 !important; }
+  .dash-content { padding: 16px !important; }
+  .stats-grid { grid-template-columns: 1fr 1fr !important; }
+  .mobile-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #111;
+    border-top: 1px solid #1a1a1a;
+    padding: 10px 0 20px;
+    z-index: 100;
+    justify-content: space-around;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav { display: none !important; }
+}
