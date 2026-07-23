@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
+import Integrations from './pages/Integrations'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="integrations" element={<Integrations />} />
         </Route>
       </Routes>
     </AuthProvider>
