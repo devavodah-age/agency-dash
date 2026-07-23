@@ -139,12 +139,18 @@ export default function Login() {
             </button>
           </form>
 
-          <p style={{ textAlign:'center', fontSize:'12px', color:'rgba(255,255,255,0.2)', marginTop:'28px' }}>
-            Não tem conta?{' '}
-            <a href='/register' style={{ color:'rgba(255,255,255,0.6)', textDecoration:'none', fontWeight:600 }}>
-              Criar conta
-            </a>
-          </p>
+          <a href='/register' style={{
+            display:'block', textAlign:'center', marginTop:'16px',
+            padding:'13px', borderRadius:'10px',
+            border:'1px solid rgba(255,255,255,0.12)',
+            fontSize:'12px', fontWeight:600, letterSpacing:'1px', textTransform:'uppercase',
+            color:'rgba(255,255,255,0.7)', textDecoration:'none',
+            transition:'all .2s'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.35)'; e.currentTarget.style.color='#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.12)'; e.currentTarget.style.color='rgba(255,255,255,0.7)' }}>
+            Criar conta
+          </a>
 
           <p style={{ textAlign:'center', fontSize:'11px',
             color:'rgba(255,255,255,0.12)', marginTop:'16px' }}>
