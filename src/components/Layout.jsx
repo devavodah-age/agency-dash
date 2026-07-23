@@ -29,29 +29,39 @@ function SidebarLogo() {
 
   return (
     <div key={tick} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-      <svg viewBox="0 0 240 160" width="120" height="80" fill="none">
+      <svg viewBox="0 0 240 160" width="130" height="88" fill="none">
         <defs>
           <filter id="glow-sb">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow2-sb">
+            <feGaussianBlur stdDeviation="8" result="blur"/>
             <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
         {SEGMENTS.map((s, i) => (
-          <path key={i} d={s.d} stroke="#111" strokeWidth="2.5" strokeLinecap="round"
-            filter="url(#glow-sb)"
-            style={{ strokeDasharray: s.len, strokeDashoffset: s.len,
-              animation: `.9s ease forwards draw-sb`, animationDelay: `${s.delay}s` }}/>
+          <g key={i}>
+            <path d={s.d} stroke="rgba(255,255,255,0.15)" strokeWidth="6"
+              strokeLinecap="round" filter="url(#glow2-sb)"
+              style={{ strokeDasharray: s.len, strokeDashoffset: s.len,
+                animation: `.9s ease forwards draw-sb`, animationDelay: `${s.delay}s` }}/>
+            <path d={s.d} stroke="white" strokeWidth="2" strokeLinecap="round"
+              filter="url(#glow-sb)"
+              style={{ strokeDasharray: s.len, strokeDashoffset: s.len,
+                animation: `.9s ease forwards draw-sb`, animationDelay: `${s.delay}s` }}/>
+          </g>
         ))}
         <style>{`@keyframes draw-sb { to { stroke-dashoffset: 0; } }`}</style>
       </svg>
-      <p style={{ fontSize:'8px', fontWeight:800, letterSpacing:'5px',
-        color:'rgba(0,0,0,0.4)', textTransform:'uppercase',
+      <p style={{ fontSize:'9px', fontWeight:700, letterSpacing:'5px',
+        color:'rgba(255,255,255,0.6)', textTransform:'uppercase',
         opacity:0, animation:'fadein-sb 1s ease forwards', animationDelay:'7s' }}>
         AGENCIA AVODAH
       </p>
       <style>{`
         @keyframes fadein-sb {
-          from { opacity:0; transform:translateY(3px); }
+          from { opacity:0; transform:translateY(4px); }
           to   { opacity:1; transform:translateY(0); }
         }
       `}</style>
@@ -65,62 +75,48 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/login') }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'#060606' }}>
-      {/* Sidebar branca */}
-      <aside style={{
-        width: '220px', display:'flex', flexDirection:'column',
-        background: '#ffffff', borderRight: '1px solid #e5e5e5',
-        position: 'sticky', top: 0, height: '100vh'
-      }}>
-        {/* Logo */}
-        <div style={{ padding:'28px 20px 20px', borderBottom:'1px solid #ebebeb' }}>
+    <div className="flex min-h-screen bg-surface">
+      <aside className="w-60 flex flex-col border-r border-surface-border bg-surface-card">
+        <div className="flex items-center justify-center py-6 border-b border-surface-border">
           <SidebarLogo />
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex:1, padding:'16px 12px', display:'flex', flexDirection:'column', gap:'4px' }}>
+        <nav className="flex-1 px-3 py-4 space-y-1">
           {nav.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
-              style={({ isActive }) => ({
-                display:'flex', alignItems:'center', gap:'10px',
-                padding:'10px 12px', borderRadius:'8px',
-                fontSize:'13px', fontWeight: isActive ? 700 : 500,
-                textDecoration:'none', transition:'all .15s',
-                background: isActive ? '#111' : 'transparent',
-                color: isActive ? '#fff' : '#555',
-              })}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white text-black'
+                    : 'text-brand-dim hover:text-white hover:bg-surface-hover'
+                }`
+              }
             >
-              <Icon size={15}/>
+              <Icon className="w-4 h-4" />
               {label}
             </NavLink>
           ))}
         </nav>
 
-        {/* User */}
-        <div style={{ padding:'16px 12px', borderTop:'1px solid #ebebeb' }}>
-          <div style={{ padding:'8px 12px', marginBottom:'4px' }}>
-            <p style={{ fontSize:'13px', fontWeight:600, color:'#111', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name}</p>
-            <p style={{ fontSize:'11px', color:'#999', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:'2px' }}>{user?.email}</p>
+        <div className="px-3 py-4 border-t border-surface-border">
+          <div className="px-3 py-2 mb-1">
+            <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+            <p className="text-brand-dim text-xs truncate">{user?.email}</p>
           </div>
-          <button onClick={handleLogout} style={{
-            display:'flex', alignItems:'center', gap:'8px',
-            width:'100%', padding:'9px 12px', borderRadius:'8px',
-            background:'transparent', border:'none', cursor:'pointer',
-            fontSize:'13px', color:'#999', transition:'all .15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background='#f5f5f5'; e.currentTarget.style.color='#111' }}
-          onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#999' }}>
-            <LogOut size={14}/>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-brand-dim hover:text-white hover:bg-surface-hover transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
             Sair
           </button>
         </div>
       </aside>
 
-      {/* Conteúdo dark */}
-      <main style={{ flex:1, overflowY:'auto', background:'#060606' }}>
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
     </div>
