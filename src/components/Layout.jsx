@@ -7,24 +7,6 @@ const nav = [
   { to: '/clients', icon: Users, label: 'Clientes' },
 ]
 
-function AvodahIcon() {
-  return (
-    <svg width="28" height="24" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <filter id="glow-s">
-        <feGaussianBlur stdDeviation="0.8" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <g filter="url(#glow-s)">
-        {/* A */}
-        <polyline points="1,21 6.5,3 12,21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        <line x1="3.5" y1="14" x2="9.5" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-        {/* V */}
-        <polyline points="16,3 21.5,21 27,3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </g>
-    </svg>
-  )
-}
-
 export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -36,14 +18,8 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className="w-60 flex flex-col border-r border-surface-border bg-surface-card">
         {/* Logo */}
-        <div className="px-6 py-6 border-b border-surface-border">
-          <div className="flex items-center gap-2">
-            <AvodahIcon />
-            <div>
-              <p className="text-white font-black text-sm tracking-widest uppercase">Avodah</p>
-              <p className="text-brand-dim text-xs">Agency Dashboard</p>
-            </div>
-          </div>
+        <div className="px-6 py-5 border-b border-surface-border flex justify-center">
+          <img src="/logo.jpg" alt="Agência Avodah" className="w-32 h-32 object-contain rounded-xl" />
         </div>
 
         {/* Nav */}
