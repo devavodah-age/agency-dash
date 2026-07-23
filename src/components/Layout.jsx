@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,6 +7,70 @@ const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/clients', icon: Users, label: 'Clientes' },
 ]
+
+const SEGMENTS = [
+  { d: 'M 8,148 L 60,8',    len: 150, delay: 0.0 },
+  { d: 'M 60,8 L 112,148',  len: 150, delay: 0.9 },
+  { d: 'M 28,105 L 60,28',  len:  90, delay: 1.8 },
+  { d: 'M 60,28 L 90,105',  len:  90, delay: 2.5 },
+  { d: 'M 138,8 L 185,148', len: 150, delay: 3.4 },
+  { d: 'M 185,148 L 232,8', len: 150, delay: 4.3 },
+  { d: 'M 158,8 L 185,95',  len:  98, delay: 5.2 },
+  { d: 'M 185,95 L 212,8',  len:  98, delay: 5.9 },
+]
+
+function SidebarLogo() {
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 10000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div key={tick} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+      <svg viewBox="0 0 240 160" width="130" height="88" fill="none">
+        <defs>
+          <filter id="glow-sb">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow2-sb">
+            <feGaussianBlur stdDeviation="8" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        {SEGMENTS.map((s, i) => (
+          <g key={i}>
+            <path d={s.d} stroke="rgba(255,255,255,0.15)" strokeWidth="6"
+              strokeLinecap="round" filter="url(#glow2-sb)"
+              style={{ strokeDasharray: s.len, strokeDashoffset: s.len,
+                animation: `.9s ease forwards draw-sb`, animationDelay: `${s.delay}s` }}/>
+            <path d={s.d} stroke="white" strokeWidth="2" strokeLinecap="round"
+              filter="url(#glow-sb)"
+              style={{ strokeDasharray: s.len, strokeDashoffset: s.len,
+                animation: `.9s ease forwards draw-sb`, animationDelay: `${s.delay}s` }}/>
+          </g>
+        ))}
+
+        <style>{`@keyframes draw-sb { to { stroke-dashoffset: 0; } }`}</style>
+      </svg>
+
+      <p style={{ fontSize:'9px', fontWeight:700, letterSpacing:'5px',
+        color:'rgba(255,255,255,0.6)', textTransform:'uppercase',
+        opacity:0, animation:'fadein-sb 1s ease forwards', animationDelay:'7s' }}>
+        AGENCIA AVODAH
+      </p>
+      <style>{`
+        @keyframes fadein-sb {
+          from { opacity:0; transform:translateY(4px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -16,13 +81,9 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen bg-surface">
       <aside className="w-60 flex flex-col border-r border-surface-border bg-surface-card">
-        {/* Logo */}
-        <div className="p-4 border-b border-surface-border">
-          <img
-            src="/logo.jpg"
-            alt="Agência Avodah"
-            className="w-28 h-28 object-cover rounded-xl"
-          />
+        {/* Logo animado */}
+        <div className="flex items-center justify-center py-6 border-b border-surface-border">
+          <SidebarLogo />
         </div>
 
         {/* Nav */}
