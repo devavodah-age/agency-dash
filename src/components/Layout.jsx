@@ -64,7 +64,7 @@ export default function Layout() {
     <div style={{ display:'flex', height:'100vh', background:'#0d0d0d', overflow:'hidden' }}>
 
       {/* Sidebar */}
-      <aside style={{
+      <aside className="sidebar" style={{
         width:'230px', display:'flex', flexDirection:'column',
         background:'#111', borderRight:'1px solid #1a1a1a', flexShrink:0
       }}>
@@ -116,9 +116,32 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main style={{ flex:1, overflowY:'auto', background:'#0d0d0d' }}>
+      <main style={{ flex:1, overflowY:'auto', background:'#0d0d0d', paddingBottom:'70px' }} className="dash-content">
         <Outlet />
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="mobile-nav">
+        {nav.map(({ to, icon: Icon, label }) => (
+          <NavLink key={to} to={to} end={to === '/'}
+            style={({ isActive }) => ({
+              display:'flex', flexDirection:'column', alignItems:'center', gap:'4px',
+              textDecoration:'none', color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.35)',
+              fontSize:'10px', fontWeight: isActive ? 600 : 400,
+            })}>
+            <Icon size={18}/>
+            {label}
+          </NavLink>
+        ))}
+        <button onClick={handleLogout} style={{
+          display:'flex', flexDirection:'column', alignItems:'center', gap:'4px',
+          background:'transparent', border:'none', cursor:'pointer',
+          color:'rgba(255,255,255,0.35)', fontSize:'10px'
+        }}>
+          <LogOut size={18}/>
+          Sair
+        </button>
+      </nav>
     </div>
   )
 }
