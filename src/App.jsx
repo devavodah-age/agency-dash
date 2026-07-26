@@ -5,6 +5,9 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import Integrations from './pages/Integrations'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
+import DataDeletion from './pages/DataDeletion'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -23,6 +26,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/data-deletion" element={<DataDeletion />} />
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="clients" element={<Clients />} />
