@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Link, Users } from 'lucide-react'
 import api from '../lib/api'
 
 const EMPTY = { name: '', email: '', meta_account_id: '' }
@@ -11,6 +11,13 @@ export default function Clients() {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+
+  const [linkingId, setLinkingId] = useState(null)
+  const [linkEmail, setLinkEmail] = useState('')
+  const [linkMsg, setLinkMsg] = useState(null)
+  const [linking, setLinking] = useState(false)
+
+  const [linkedUsers, setLinkedUsers] = useState({})
 
   const load = async () => {
     try {
@@ -31,24 +38,40 @@ export default function Clients() {
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY) }
 
   const handleSubmit = async e => {
-    e.preventDefault()
-    setSaving(true)
+    e.preventDefault(); setSaving(true)
     try {
-      if (editingId) {
-        await api.put(`/clients/${editingId}`, form)
-      } else {
-        await api.post('/clients', form)
-      }
-      closeForm()
-      load()
+      if (editingId) await api.put(`/clients/${editingId}`, form)
+      else await api.post('/clients', form)
+      closeForm(); load()
     } catch {}
     setSaving(false)
   }
 
   const handleDelete = async id => {
     if (!confirm('Remover cliente?')) return
-    await api.delete(`/clients/${id}`)
-    load()
+    await api.delete(`/clients/${id}`); load()
+  }
+
+  const openLink = async (c) => {
+    setLinkingId(c.id); setLinkEmail(''); setLinkMsg(null)
+    try {
+      const { data } = await api.get(`/clients/${c.id}/linked-users`)
+      setLinkedUsers(prev => ({ ...prev, [c.id]: data }))
+    } catch {}
+  }
+
+  const handleLink = async e => {
+    e.preventDefault(); setLinking(true); setLinkMsg(null)
+    try {
+      await api.post(`/clients/${linkingId}/link-user`, { email: linkEmail })
+      setLinkMsg({ ok: true, text: 'Usuário vinculado com sucesso!' })
+      setLinkEmail('')
+      const { data } = await api.get(`/clients/${linkingId}/linked-users`)
+      setLinkedUsers(prev => ({ ...prev, [linkingId]: data }))
+    } catch (err) {
+      setLinkMsg({ ok: false, text: err?.response?.data?.error || 'Erro ao vincular' })
+    }
+    setLinking(false)
   }
 
   return (
@@ -58,16 +81,12 @@ export default function Clients() {
           <h1 className="text-white text-2xl font-bold">Clientes</h1>
           <p className="text-brand-dim text-sm mt-1">{clients.length} cliente{clients.length !== 1 ? 's' : ''} cadastrado{clients.length !== 1 ? 's' : ''}</p>
         </div>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 bg-white text-black text-sm font-bold px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Cliente
+        <button onClick={openNew} className="flex items-center gap-2 bg-white text-black text-sm font-bold px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+          <Plus className="w-4 h-4" /> Novo Cliente
         </button>
       </div>
 
-      {/* Form */}
+      {/* Edit/Create Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface-card border border-surface-border rounded-xl p-6 mb-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -79,32 +98,21 @@ export default function Clients() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-brand-dim mb-1.5 uppercase tracking-wider">Nome *</label>
-              <input
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                required
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required
                 className="w-full bg-surface border border-surface-border rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-white transition-colors"
-                placeholder="Nome do cliente"
-              />
+                placeholder="Nome do cliente" />
             </div>
             <div>
               <label className="block text-xs text-brand-dim mb-1.5 uppercase tracking-wider">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 className="w-full bg-surface border border-surface-border rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-white transition-colors"
-                placeholder="email@cliente.com"
-              />
+                placeholder="email@cliente.com" />
             </div>
             <div>
               <label className="block text-xs text-brand-dim mb-1.5 uppercase tracking-wider">ID Conta Meta</label>
-              <input
-                value={form.meta_account_id}
-                onChange={e => setForm(f => ({ ...f, meta_account_id: e.target.value }))}
+              <input value={form.meta_account_id} onChange={e => setForm(f => ({ ...f, meta_account_id: e.target.value }))}
                 className="w-full bg-surface border border-surface-border rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-white transition-colors"
-                placeholder="940976846408593"
-              />
+                placeholder="940976846408593" />
               <p className="text-xs text-brand-dim mt-1">Só o número, sem act_</p>
             </div>
           </div>
@@ -119,7 +127,55 @@ export default function Clients() {
         </form>
       )}
 
-      {/* Lista */}
+      {/* Link user panel */}
+      {linkingId && (
+        <div className="bg-surface-card border border-surface-border rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-brand-dim" />
+              <p className="text-white font-semibold text-sm">Vincular usuário ao cliente</p>
+            </div>
+            <button onClick={() => { setLinkingId(null); setLinkMsg(null) }} className="text-brand-dim hover:text-white transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <p className="text-xs text-brand-dim mb-4">Digite o e-mail da conta de cliente que deseja vincular. O cliente precisa ter criado a conta no portal primeiro.</p>
+
+          <form onSubmit={handleLink} className="flex gap-3 mb-4">
+            <input type="email" value={linkEmail} onChange={e => setLinkEmail(e.target.value)} required
+              placeholder="email@cliente.com"
+              className="flex-1 bg-surface border border-surface-border rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-white transition-colors" />
+            <button type="submit" disabled={linking} className="flex items-center gap-2 bg-white text-black text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">
+              <Link className="w-3.5 h-3.5" /> {linking ? 'Vinculando...' : 'Vincular'}
+            </button>
+          </form>
+
+          {linkMsg && (
+            <p className={`text-xs mb-4 ${linkMsg.ok ? 'text-green-400' : 'text-red-400'}`}>{linkMsg.text}</p>
+          )}
+
+          {linkedUsers[linkingId]?.length > 0 && (
+            <div>
+              <p className="text-xs text-brand-dim uppercase tracking-wider mb-2">Usuários vinculados</p>
+              <div className="space-y-1">
+                {linkedUsers[linkingId].map(u => (
+                  <div key={u.id} className="flex items-center justify-between bg-surface rounded-lg px-3 py-2">
+                    <p className="text-white text-sm">{u.name}</p>
+                    <p className="text-brand-dim text-xs">{u.email}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {linkedUsers[linkingId]?.length === 0 && (
+            <p className="text-xs text-brand-dim">Nenhum usuário vinculado a este cliente ainda.</p>
+          )}
+        </div>
+      )}
+
+      {/* List */}
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -147,6 +203,9 @@ export default function Clients() {
                   <td className="px-6 py-4 text-brand-dim text-sm font-mono">{c.meta_account_id || '—'}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => openLink(c)} className="p-1.5 text-brand-dim hover:text-white transition-colors" title="Vincular usuário">
+                        <Users className="w-4 h-4" />
+                      </button>
                       <button onClick={() => openEdit(c)} className="p-1.5 text-brand-dim hover:text-white transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
