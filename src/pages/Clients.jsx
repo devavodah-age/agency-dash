@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import api from '../lib/api'
+
+const EMPTY = { name: '', email: '', meta_account_id: '' }
 
 export default function Clients() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', meta_account_id: '' })
+  const [editingId, setEditingId] = useState(null)
+  const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -19,13 +22,24 @@ export default function Clients() {
 
   useEffect(() => { load() }, [])
 
+  const openNew = () => { setForm(EMPTY); setEditingId(null); setShowForm(true) }
+  const openEdit = (c) => {
+    setForm({ name: c.name, email: c.email || '', meta_account_id: c.meta_account_id || '' })
+    setEditingId(c.id)
+    setShowForm(true)
+  }
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY) }
+
   const handleSubmit = async e => {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.post('/clients', form)
-      setForm({ name: '', email: '', meta_account_id: '' })
-      setShowForm(false)
+      if (editingId) {
+        await api.put(`/clients/${editingId}`, form)
+      } else {
+        await api.post('/clients', form)
+      }
+      closeForm()
       load()
     } catch {}
     setSaving(false)
@@ -45,7 +59,7 @@ export default function Clients() {
           <p className="text-brand-dim text-sm mt-1">{clients.length} cliente{clients.length !== 1 ? 's' : ''} cadastrado{clients.length !== 1 ? 's' : ''}</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openNew}
           className="flex items-center gap-2 bg-white text-black text-sm font-bold px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -56,7 +70,12 @@ export default function Clients() {
       {/* Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface-card border border-surface-border rounded-xl p-6 mb-6 space-y-4">
-          <p className="text-white font-semibold">Novo Cliente</p>
+          <div className="flex items-center justify-between">
+            <p className="text-white font-semibold">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</p>
+            <button type="button" onClick={closeForm} className="text-brand-dim hover:text-white transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-brand-dim mb-1.5 uppercase tracking-wider">Nome *</label>
@@ -84,15 +103,16 @@ export default function Clients() {
                 value={form.meta_account_id}
                 onChange={e => setForm(f => ({ ...f, meta_account_id: e.target.value }))}
                 className="w-full bg-surface border border-surface-border rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-white transition-colors"
-                placeholder="act_XXXXXXXXXX"
+                placeholder="940976846408593"
               />
+              <p className="text-xs text-brand-dim mt-1">Só o número, sem act_</p>
             </div>
           </div>
           <div className="flex gap-3">
             <button type="submit" disabled={saving} className="bg-white text-black text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">
-              {saving ? 'Salvando...' : 'Salvar'}
+              {saving ? 'Salvando...' : editingId ? 'Atualizar' : 'Salvar'}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="text-brand-dim text-sm px-5 py-2.5 rounded-lg hover:text-white transition-colors">
+            <button type="button" onClick={closeForm} className="text-brand-dim text-sm px-5 py-2.5 rounded-lg hover:text-white transition-colors">
               Cancelar
             </button>
           </div>
@@ -127,7 +147,7 @@ export default function Clients() {
                   <td className="px-6 py-4 text-brand-dim text-sm font-mono">{c.meta_account_id || '—'}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 text-brand-dim hover:text-white transition-colors">
+                      <button onClick={() => openEdit(c)} className="p-1.5 text-brand-dim hover:text-white transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id)} className="p-1.5 text-brand-dim hover:text-red-400 transition-colors">
