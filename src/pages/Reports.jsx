@@ -43,9 +43,8 @@ function ReportView({ report, onClose, onDelete }) {
       <tr>
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#222;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</td>
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444;font-weight:600">R$ ${Number(c.spend||0).toFixed(2).replace('.',',')}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.leads||0}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2).replace('.',',') : '—'}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.results??c.leads??0}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${(c.cost_per_result??c.cpl) ? 'R$ '+Number(c.cost_per_result??c.cpl).toFixed(2).replace('.',',') : '—'}</td>
       </tr>`).join('')
 
     win.document.write(`<!DOCTYPE html><html><head><title>${report.title}</title>
@@ -91,8 +90,8 @@ function ReportView({ report, onClose, onDelete }) {
 
     <div class="metrics">
       <div class="metric purple"><div class="lbl">Valor investido</div><div class="val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div>
-      <div class="metric"><div class="lbl">Contatos gerados</div><div class="val">${m.total_leads||0}</div></div>
-      <div class="metric"><div class="lbl">Custo por contato</div><div class="val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div>
+      <div class="metric"><div class="lbl">${m.result_label||'Resultados'}</div><div class="val">${m.total_results??m.total_leads??0}</div></div>
+      <div class="metric"><div class="lbl">Custo por resultado</div><div class="val">${(m.cost_per_result??m.avg_cpl) ? 'R$ '+Number(m.cost_per_result??m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div>
       <div class="metric"><div class="lbl">Cliques nos anúncios</div><div class="val">${Number(m.total_clicks||0).toLocaleString('pt-BR')}</div></div>
     </div>
 
@@ -112,7 +111,7 @@ function ReportView({ report, onClose, onDelete }) {
     ${m.top_campaigns?.length ? `<div class="section">
       <div class="section-title">Campanhas em destaque</div>
       <table><thead><tr>
-        <th>Campanha</th><th>Valor investido</th><th>Contatos gerados</th><th>Custo por contato</th><th>Taxa de cliques</th>
+        <th>Campanha</th><th>Valor investido</th><th>${m.result_label||'Resultados'}</th><th>Custo por resultado</th>
       </tr></thead><tbody>${topRows}</tbody></table>
     </div>` : ''}
 
@@ -150,10 +149,10 @@ function ReportView({ report, onClose, onDelete }) {
         <div style={{ padding:'24px' }}>
           {/* Metrics grid */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:24 }}>
-            <MetricCard icon={DollarSign} label="Valor investido"      value={fmtBRL(m.total_spend)} color="#a78bfa" />
-            <MetricCard icon={Users}       label="Contatos gerados"    value={fmtInt(m.total_leads)} color="#4ade80" />
-            <MetricCard icon={TrendingUp}  label="Custo por contato"   value={fmtBRL(m.avg_cpl)}    color="#facc15" />
-            <MetricCard icon={MousePointer} label="Cliques nos anúncios" value={fmtInt(m.total_clicks)} color="#60a5fa" />
+            <MetricCard icon={DollarSign}   label="Valor investido"                   value={fmtBRL(m.total_spend)} color="#a78bfa" />
+            <MetricCard icon={Users}        label={m.result_label || 'Resultados'}   value={fmtInt(m.total_results ?? m.total_leads)} color="#4ade80" />
+            <MetricCard icon={TrendingUp}   label="Custo por resultado"              value={fmtBRL(m.cost_per_result ?? m.avg_cpl)} color="#facc15" />
+            <MetricCard icon={MousePointer} label="Cliques nos anúncios"             value={fmtInt(m.total_clicks)} color="#60a5fa" />
           </div>
 
           {/* AI content */}
@@ -202,7 +201,7 @@ function ReportView({ report, onClose, onDelete }) {
                 <table style={{ width:'100%', borderCollapse:'collapse' }}>
                   <thead>
                     <tr>
-                      {['Campanha','Gasto','Leads','CPL','CTR'].map(h => (
+                      {['Campanha','Valor investido', m.result_label||'Resultados','Custo por resultado'].map(h => (
                         <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.3)', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.02)' }}>{h}</th>
                       ))}
                     </tr>
@@ -212,9 +211,8 @@ function ReportView({ report, onClose, onDelete }) {
                       <tr key={i}>
                         <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.8)', borderBottom:'1px solid rgba(255,255,255,0.04)', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.name}</td>
                         <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)', fontFamily:'monospace' }}>{fmtBRL(c.spend)}</td>
-                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>{c.leads ?? '—'}</td>
-                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)', fontFamily:'monospace' }}>{fmtBRL(c.cpl)}</td>
-                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>{c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>{c.results ?? c.leads ?? '—'}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)', fontFamily:'monospace' }}>{fmtBRL(c.cost_per_result ?? c.cpl)}</td>
                       </tr>
                     ))}
                   </tbody>
