@@ -6,6 +6,8 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import Traffic from './pages/Traffic'
+import Tickets from './pages/Tickets'
+import Reports from './pages/Reports'
 import Integrations from './pages/Integrations'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -51,6 +53,8 @@ export default function App() {
             <Route path="traffic" element={<Traffic />} />
             <Route path="clients" element={<Clients />} />
             <Route path="integrations" element={<Integrations />} />
+            <Route path="tickets" element={<Tickets />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
           <Route path="/client/login" element={<ClientLogin />} />
           <Route path="/client/register" element={<ClientRegister />} />
