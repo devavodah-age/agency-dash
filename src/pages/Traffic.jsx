@@ -191,6 +191,8 @@ export default function Traffic() {
   const [aiError, setAiError]           = useState(null)
   const [applying, setApplying]         = useState({})
   const [preview, setPreview]           = useState(null)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [search, setSearch]             = useState('')
 
   useEffect(() => { api.get('/traffic/clients').then(r => setClients(r.data)).catch(() => {}) }, [])
 
@@ -237,8 +239,14 @@ export default function Traffic() {
     setApplying(a => ({ ...a, [rec.campaign_id]: false }))
   }
 
-  const currentData = tab === 'campaigns' ? campaigns : tab === 'adsets' ? adsets : ads
+  const rawData = tab === 'campaigns' ? campaigns : tab === 'adsets' ? adsets : ads
   const setCurrentData = tab === 'campaigns' ? setCampaigns : tab === 'adsets' ? setAdsets : setAds
+  const currentData = rawData.filter(item => {
+    if (statusFilter === 'active' && item.effective_status !== 'ACTIVE') return false
+    if (statusFilter === 'paused' && item.effective_status !== 'PAUSED') return false
+    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   const TH = ({ children, right }) => (
     <th style={{ padding:'10px 16px', textAlign: right ? 'right' : 'left', fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.3)', whiteSpace:'nowrap', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.02)' }}>{children}</th>
@@ -279,6 +287,38 @@ export default function Traffic() {
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{ padding:'10px 20px', border:'none', background:'none', cursor:'pointer', fontSize:13, fontWeight:600, transition:'all .15s', color: tab === t.key ? 'white' : 'rgba(255,255,255,0.3)', borderBottom: tab === t.key ? '2px solid #a78bfa' : '2px solid transparent', marginBottom:-1 }}>{t.label}</button>
           ))}
+        </div>
+
+        {/* Filters row */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 0 0', flexWrap:'wrap' }}>
+          {/* Status filter */}
+          <div style={{ display:'flex', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, overflow:'hidden' }}>
+            {[{k:'all',l:'Todas'},{k:'active',l:'● Ativas'},{k:'paused',l:'● Pausadas'}].map(({k,l}) => (
+              <button key={k} onClick={() => setStatusFilter(k)} style={{ padding:'6px 14px', border:'none', fontSize:11, fontWeight:700, cursor:'pointer', transition:'all .15s', background: statusFilter === k ? (k==='active' ? 'rgba(74,222,128,0.15)' : k==='paused' ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.08)') : 'transparent', color: statusFilter === k ? (k==='active' ? '#4ade80' : k==='paused' ? '#f87171' : 'white') : 'rgba(255,255,255,0.35)' }}>{l}</button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div style={{ position:'relative', flex:1, maxWidth:280 }}>
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar por nome..."
+              style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, padding:'6px 32px 6px 12px', color:'white', fontSize:12, outline:'none', boxSizing:'border-box' }}
+              onFocus={e => e.target.style.borderColor='rgba(255,255,255,0.2)'}
+              onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.08)'}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', padding:0, display:'flex' }}>
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {(statusFilter !== 'all' || search) && (
+            <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)' }}>
+              {currentData.length} de {rawData.length} resultado{currentData.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
       </div>
 
