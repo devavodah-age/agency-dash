@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Plug, LogOut, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Users, Plug, LogOut, TrendingUp, MessageSquare, FileText } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/traffic', icon: TrendingUp, label: 'Tráfego' },
   { to: '/clients', icon: Users, label: 'Clientes' },
+  { to: '/tickets', icon: MessageSquare, label: 'Chamados' },
+  { to: '/reports', icon: FileText, label: 'Relatórios' },
   { to: '/integrations', icon: Plug, label: 'Integrações' },
 ]
 
