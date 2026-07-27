@@ -148,6 +148,52 @@ function ActionBtns({ item, level, toggling, setToggling, scaling, setScaling, s
           )}
         </div>
       )}
+
+      {/* Creative Preview Modal */}
+      {preview && (
+        <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, backdropFilter: 'blur(6px)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, overflow: 'hidden', maxWidth: 480, width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+            {/* Image */}
+            <div style={{ background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280, position: 'relative' }}>
+              {preview.thumbnail_url
+                ? <img src={preview.thumbnail_url} alt={preview.name} style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain', display: 'block' }} />
+                : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.2)' }}>
+                    <Image size={40} />
+                    <span style={{ fontSize: 12 }}>Sem prévia disponível</span>
+                  </div>
+              }
+              <button onClick={() => setPreview(null)} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={14} />
+              </button>
+            </div>
+            {/* Info */}
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{preview.name}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{preview.adset_name}</p>
+                </div>
+                <StatusPill status={preview.effective_status} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Campanha', value: preview.campaign_name },
+                  { label: 'Cliente', value: preview.client_name },
+                  { label: 'Gasto', value: preview.spend > 0 ? fmtBRL(preview.spend) : '—' },
+                  { label: 'Impressões', value: fmtInt(preview.impressions) },
+                  { label: 'Cliques', value: fmtInt(preview.clicks) },
+                  { label: 'CTR', value: preview.ctr != null ? `${Number(preview.ctr).toFixed(2)}%` : '—' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
+                    <p style={{ fontSize: 13, color: 'white', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -173,6 +219,7 @@ export default function Traffic() {
   const [aiResult, setAiResult]         = useState(null)
   const [aiError, setAiError]           = useState(null)
   const [applying, setApplying]         = useState({})
+  const [preview, setPreview]           = useState(null)
 
   useEffect(() => { api.get('/traffic/clients').then(r => setClients(r.data)).catch(() => {}) }, [])
 
@@ -377,10 +424,13 @@ export default function Traffic() {
                   {/* Thumbnail (ads only) */}
                   {tab === 'ads' && (
                     <td style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)', width: 50 }}>
-                      {item.thumbnail_url
-                        ? <img src={item.thumbnail_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, display: 'block' }} />
-                        : <div style={{ width: 40, height: 40, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Image size={14} color="rgba(255,255,255,0.2)" /></div>
-                      }
+                      <div onClick={() => setPreview(item)} style={{ cursor: 'pointer' }} title="Ver prévia">
+                        {item.thumbnail_url
+                          ? <img src={item.thumbnail_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, display: 'block', transition: 'opacity .15s' }}
+                              onMouseEnter={e => e.target.style.opacity='.7'} onMouseLeave={e => e.target.style.opacity='1'} />
+                          : <div style={{ width: 40, height: 40, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Image size={14} color="rgba(255,255,255,0.2)" /></div>
+                        }
+                      </div>
                     </td>
                   )}
 
@@ -434,6 +484,52 @@ export default function Traffic() {
           </table>
         )}
       </div>
+
+      {/* Creative Preview Modal */}
+      {preview && (
+        <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, backdropFilter: 'blur(6px)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, overflow: 'hidden', maxWidth: 480, width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+            {/* Image */}
+            <div style={{ background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280, position: 'relative' }}>
+              {preview.thumbnail_url
+                ? <img src={preview.thumbnail_url} alt={preview.name} style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain', display: 'block' }} />
+                : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.2)' }}>
+                    <Image size={40} />
+                    <span style={{ fontSize: 12 }}>Sem prévia disponível</span>
+                  </div>
+              }
+              <button onClick={() => setPreview(null)} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={14} />
+              </button>
+            </div>
+            {/* Info */}
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{preview.name}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{preview.adset_name}</p>
+                </div>
+                <StatusPill status={preview.effective_status} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Campanha', value: preview.campaign_name },
+                  { label: 'Cliente', value: preview.client_name },
+                  { label: 'Gasto', value: preview.spend > 0 ? fmtBRL(preview.spend) : '—' },
+                  { label: 'Impressões', value: fmtInt(preview.impressions) },
+                  { label: 'Cliques', value: fmtInt(preview.clicks) },
+                  { label: 'CTR', value: preview.ctr != null ? `${Number(preview.ctr).toFixed(2)}%` : '—' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
+                    <p style={{ fontSize: 13, color: 'white', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
