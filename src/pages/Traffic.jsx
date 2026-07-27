@@ -155,7 +155,7 @@ function ActionBtns({ item, level, toggling, setToggling, scaling, setScaling, s
 export default function Traffic() {
   const [clients, setClients]           = useState([])
   const [selectedClient, setSelectedClient] = useState('all')
-  const [period, setPeriod]             = useState('last_30d')
+  const [period, setPeriod]             = useState('today')
   const [tab, setTab]                   = useState('campaigns')
 
   const [campaigns, setCampaigns]       = useState([])
