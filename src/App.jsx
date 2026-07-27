@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
+import Traffic from './pages/Traffic'
 import Integrations from './pages/Integrations'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -40,7 +41,6 @@ export default function App() {
     <AuthProvider>
       <ClientAuthProvider>
         <Routes>
-          {/* Agency routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -48,11 +48,10 @@ export default function App() {
           <Route path="/data-deletion" element={<DataDeletion />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
+            <Route path="traffic" element={<Traffic />} />
             <Route path="clients" element={<Clients />} />
             <Route path="integrations" element={<Integrations />} />
           </Route>
-
-          {/* Client portal routes */}
           <Route path="/client/login" element={<ClientLogin />} />
           <Route path="/client/register" element={<ClientRegister />} />
           <Route path="/client/dashboard" element={<ClientPrivateRoute><ClientDashboard /></ClientPrivateRoute>} />
