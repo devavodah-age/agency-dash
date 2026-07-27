@@ -128,49 +128,94 @@ function ActionBtns({ item, level, toggling, setToggling, scaling, setScaling, s
 }
 
 function PreviewModal({ item, onClose }) {
+  const [previewHtml, setPreviewHtml] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(true)
+  const [previewError, setPreviewError] = useState(null)
+
+  useEffect(() => {
+    setPreviewLoading(true); setPreviewError(null); setPreviewHtml(null)
+    api.get('/traffic/ads/' + item.id + '/preview')
+      .then(r => setPreviewHtml(r.data.body))
+      .catch(err => setPreviewError(err.response?.data?.error || 'Prévia não disponível'))
+      .finally(() => setPreviewLoading(false))
+  }, [item.id])
+
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:24, backdropFilter:'blur(6px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, overflow:'hidden', maxWidth:480, width:'100%', boxShadow:'0 24px 80px rgba(0,0,0,0.8)' }}>
-        <div style={{ background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', minHeight:280, position:'relative' }}>
-          {item.thumbnail_url
-            ? <img src={item.thumbnail_url} alt={item.name} style={{ maxWidth:'100%', maxHeight:360, objectFit:'contain', display:'block' }} />
-            : <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'rgba(255,255,255,0.2)' }}>
-                <ImageOff size={40} />
-                <span style={{ fontSize:12 }}>Sem prévia disponível</span>
-              </div>
-          }
-          <button onClick={onClose} style={{ position:'absolute', top:12, right:12, width:30, height:30, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.15)', color:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <X size={14} />
-          </button>
-        </div>
-        <div style={{ padding:'20px 24px' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:16 }}>
-            <div style={{ minWidth:0 }}>
-              <p style={{ color:'white', fontWeight:700, fontSize:15, marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
-              <p style={{ color:'rgba(255,255,255,0.35)', fontSize:12, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.adset_name || '—'}</p>
-            </div>
-            <StatusPill status={item.effective_status} />
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.88)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:24, backdropFilter:'blur(8px)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, overflow:'hidden', width:'100%', maxWidth:780, maxHeight:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,0.8)' }}>
+
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.07)', flexShrink:0 }}>
+          <div style={{ minWidth:0, flex:1, marginRight:12 }}>
+            <p style={{ color:'white', fontWeight:700, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
+            <p style={{ color:'rgba(255,255,255,0.35)', fontSize:11, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.adset_name || '—'} · {item.campaign_name || '—'}</p>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            {[
-              { label:'Campanha', value: item.campaign_name || '—' },
-              { label:'Cliente', value: item.client_name || '—' },
-              { label:'Gasto', value: item.spend > 0 ? fmtBRL(item.spend) : '—' },
-              { label:'Impressões', value: fmtInt(item.impressions) },
-              { label:'Cliques', value: fmtInt(item.clicks) },
-              { label:'CTR', value: item.ctr != null ? Number(item.ctr).toFixed(2) + '%' : '—' },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:8, padding:'10px 12px' }}>
-                <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:4 }}>{label}</p>
-                <p style={{ fontSize:13, color:'white', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{value}</p>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+            <StatusPill status={item.effective_status} />
+            <button onClick={onClose} style={{ width:28, height:28, borderRadius:'50%', background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.6)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <X size={13} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body: preview + metrics side by side */}
+        <div style={{ display:'flex', flex:1, overflow:'hidden', minHeight:0 }}>
+
+          {/* Preview area */}
+          <div style={{ flex:'0 0 340px', background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', borderRight:'1px solid rgba(255,255,255,0.07)', overflow:'hidden', position:'relative', minHeight:300 }}>
+            {previewLoading && (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'rgba(255,255,255,0.2)' }}>
+                <RefreshCw size={22} style={{ animation:'spin 1s linear infinite' }} />
+                <span style={{ fontSize:12 }}>Carregando prévia...</span>
               </div>
-            ))}
+            )}
+            {previewError && !previewLoading && (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10, color:'rgba(255,255,255,0.2)', padding:20, textAlign:'center' }}>
+                {item.thumbnail_url
+                  ? <img src={item.thumbnail_url} alt="" style={{ maxWidth:'100%', maxHeight:260, objectFit:'contain', borderRadius:8 }} />
+                  : <><ImageOff size={32} /><span style={{ fontSize:12 }}>{previewError}</span></>
+                }
+              </div>
+            )}
+            {previewHtml && !previewLoading && (
+              <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+                dangerouslySetInnerHTML={{ __html: previewHtml.replace(/width="[^"]*"/, 'width="308"').replace(/height="[^"]*"/, 'height="500"') }}
+              />
+            )}
+          </div>
+
+          {/* Metrics */}
+          <div style={{ flex:1, overflowY:'auto', padding:20 }}>
+            <p style={{ fontSize:10, color:'rgba(255,255,255,0.25)', letterSpacing:2, textTransform:'uppercase', marginBottom:14 }}>Métricas do período</p>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              {[
+                { label:'Cliente',     value: item.client_name || '—' },
+                { label:'Gasto',       value: item.spend > 0 ? fmtBRL(item.spend) : '—' },
+                { label:'Impressões',  value: fmtInt(item.impressions) },
+                { label:'Cliques',     value: fmtInt(item.clicks) },
+                { label:'Leads',       value: fmtInt(item.leads) },
+                { label:'CPL',         value: item.cpl != null ? fmtBRL(item.cpl) : '—' },
+                { label:'CTR',         value: item.ctr != null ? Number(item.ctr).toFixed(2) + '%' : '—' },
+                { label:'CPC',         value: item.cpc != null ? fmtBRL(item.cpc) : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background:'rgba(255,255,255,0.03)', borderRadius:8, padding:'11px 14px', border:'1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize:9, color:'rgba(255,255,255,0.28)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:5 }}>{label}</p>
+                  <p style={{ fontSize:14, color:'white', fontWeight:600 }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop:16, padding:'12px 14px', background:'rgba(255,255,255,0.02)', borderRadius:8, border:'1px solid rgba(255,255,255,0.05)' }}>
+              <p style={{ fontSize:9, color:'rgba(255,255,255,0.28)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:5 }}>Conjunto de anúncios</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.7)', lineHeight:1.5 }}>{item.adset_name || '—'}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   )
 }
+
 
 export default function Traffic() {
   const [clients, setClients]           = useState([])
