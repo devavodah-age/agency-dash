@@ -1,0 +1,327 @@
+import { useState, useEffect, useCallback } from 'react'
+import { FileText, RefreshCw, Sparkles, Trash2, Download, X, TrendingUp, Users, MousePointer, DollarSign } from 'lucide-react'
+import api from '../lib/api'
+
+const PERIODS = [
+  { key: 'today',      label: 'Hoje' },
+  { key: 'last_7d',    label: 'Últimos 7 dias' },
+  { key: 'last_30d',   label: 'Últimos 30 dias' },
+  { key: 'this_month', label: 'Este mês' },
+]
+
+function fmtBRL(v) {
+  if (!v && v !== 0) return '—'
+  return 'R$\u00a0' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 })
+}
+function fmtInt(v) { return v != null ? Number(v).toLocaleString('pt-BR') : '—' }
+function fmtDate(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' })
+}
+
+function MetricCard({ icon: Icon, label, value, color }) {
+  return (
+    <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:12, padding:'16px 20px', display:'flex', alignItems:'center', gap:14 }}>
+      <div style={{ width:40, height:40, borderRadius:10, background:`${color}18`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon size={18} color={color} />
+      </div>
+      <div>
+        <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:4 }}>{label}</p>
+        <p style={{ fontSize:18, fontWeight:700, color:'white' }}>{value}</p>
+      </div>
+    </div>
+  )
+}
+
+function ReportView({ report, onClose, onDelete }) {
+  const m = report.metrics || {}
+  const ai = report.ai_content || {}
+
+  const printReport = () => {
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>${report.title}</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #111; }
+        h1 { font-size: 24px; margin-bottom: 4px; }
+        .sub { color: #666; font-size: 14px; margin-bottom: 32px; }
+        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .metric { background: #f5f5f5; border-radius: 8px; padding: 16px; text-align: center; }
+        .metric .val { font-size: 22px; font-weight: 700; margin-top: 8px; }
+        .metric .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .section { margin-bottom: 24px; }
+        .section h2 { font-size: 16px; border-bottom: 2px solid #a78bfa; padding-bottom: 8px; margin-bottom: 16px; color: #6d28d9; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; line-height: 1.6; }
+        p { line-height: 1.8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { background: #f0f0f0; padding: 10px; text-align: left; font-size: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; }
+      </style></head><body>
+      <h1>${report.title}</h1>
+      <p class="sub">Agência Avodah · Gerado em ${fmtDate(report.created_at)}</p>
+      <div class="metrics">
+        <div class="metric"><div class="lbl">Investimento</div><div class="val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div>
+        <div class="metric"><div class="lbl">Leads</div><div class="val">${m.total_leads||0}</div></div>
+        <div class="metric"><div class="lbl">CPL médio</div><div class="val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div>
+        <div class="metric"><div class="lbl">Cliques</div><div class="val">${m.total_clicks||0}</div></div>
+      </div>
+      ${ai.resumo_executivo ? `<div class="section"><h2>Resumo Executivo</h2><p>${ai.resumo_executivo}</p></div>` : ''}
+      ${ai.destaques?.length ? `<div class="section"><h2>Destaques</h2><ul>${ai.destaques.map(d=>`<li>${d}</li>`).join('')}</ul></div>` : ''}
+      ${ai.recomendacoes?.length ? `<div class="section"><h2>Recomendações</h2><ul>${ai.recomendacoes.map(r=>`<li>${r}</li>`).join('')}</ul></div>` : ''}
+      ${m.top_campaigns?.length ? `<div class="section"><h2>Campanhas em Destaque</h2><table><tr><th>Campanha</th><th>Gasto</th><th>Leads</th><th>CPL</th></tr>${m.top_campaigns.map(c=>`<tr><td>${c.name}</td><td>R$ ${Number(c.spend||0).toFixed(2)}</td><td>${c.leads||0}</td><td>${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2) : '—'}</td></tr>`).join('')}</table></div>` : ''}
+      ${ai.conclusao ? `<div class="section"><h2>Conclusão</h2><p>${ai.conclusao}</p></div>` : ''}
+      <div class="footer">Relatório gerado pela Agência Avodah · ${report.title}</div>
+      </body></html>
+    `)
+    win.document.close()
+    win.print()
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'flex-start', justifyContent:'center', overflowY:'auto', padding:'40px 20px' }}>
+      <div style={{ width:'100%', maxWidth:760, background:'#111', borderRadius:16, border:'1px solid rgba(255,255,255,0.1)', overflow:'hidden' }}>
+        {/* Modal header */}
+        <div style={{ padding:'20px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:4 }}>Relatório · {report.period_label || report.period}</p>
+            <h2 style={{ fontSize:18, fontWeight:700, color:'white', margin:0 }}>{report.title}</h2>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={printReport} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              <Download size={13} /> Exportar PDF
+            </button>
+            <button onClick={() => onDelete(report.id)} style={{ width:32, height:32, borderRadius:8, background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', color:'#f87171', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <Trash2 size={13} />
+            </button>
+            <button onClick={onClose} style={{ width:32, height:32, borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <X size={13} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding:'24px' }}>
+          {/* Metrics grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:24 }}>
+            <MetricCard icon={DollarSign} label="Investimento" value={fmtBRL(m.total_spend)} color="#a78bfa" />
+            <MetricCard icon={Users}       label="Leads"        value={fmtInt(m.total_leads)} color="#4ade80" />
+            <MetricCard icon={TrendingUp}  label="CPL Médio"    value={fmtBRL(m.avg_cpl)}    color="#facc15" />
+            <MetricCard icon={MousePointer} label="Cliques"     value={fmtInt(m.total_clicks)} color="#60a5fa" />
+          </div>
+
+          {/* AI content */}
+          {ai.resumo_executivo && (
+            <div style={{ marginBottom:20, padding:'16px 20px', background:'rgba(167,139,250,0.06)', border:'1px solid rgba(167,139,250,0.15)', borderRadius:12 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                <Sparkles size={14} color="#a78bfa" />
+                <p style={{ fontSize:12, fontWeight:700, color:'#a78bfa', letterSpacing:0.5, textTransform:'uppercase' }}>Resumo Executivo</p>
+              </div>
+              <p style={{ fontSize:14, color:'rgba(255,255,255,0.75)', lineHeight:1.7 }}>{ai.resumo_executivo}</p>
+            </div>
+          )}
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+            {ai.destaques?.length > 0 && (
+              <div style={{ padding:'16px 20px', background:'rgba(74,222,128,0.05)', border:'1px solid rgba(74,222,128,0.12)', borderRadius:12 }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'#4ade80', letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>Destaques</p>
+                <ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:8 }}>
+                  {ai.destaques.map((d, i) => (
+                    <li key={i} style={{ display:'flex', gap:8, fontSize:13, color:'rgba(255,255,255,0.7)', lineHeight:1.5 }}>
+                      <span style={{ color:'#4ade80', flexShrink:0 }}>✓</span> {d}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {ai.recomendacoes?.length > 0 && (
+              <div style={{ padding:'16px 20px', background:'rgba(250,204,21,0.05)', border:'1px solid rgba(250,204,21,0.12)', borderRadius:12 }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'#facc15', letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>Recomendações</p>
+                <ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:8 }}>
+                  {ai.recomendacoes.map((r, i) => (
+                    <li key={i} style={{ display:'flex', gap:8, fontSize:13, color:'rgba(255,255,255,0.7)', lineHeight:1.5 }}>
+                      <span style={{ color:'#facc15', flexShrink:0 }}>→</span> {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Top campaigns */}
+          {m.top_campaigns?.length > 0 && (
+            <div style={{ marginBottom:20 }}>
+              <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:12 }}>Campanhas em Destaque</p>
+              <div style={{ background:'#0d0d0d', borderRadius:10, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['Campanha','Gasto','Leads','CPL','CTR'].map(h => (
+                        <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.3)', borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.02)' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {m.top_campaigns.map((c, i) => (
+                      <tr key={i}>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.8)', borderBottom:'1px solid rgba(255,255,255,0.04)', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.name}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)', fontFamily:'monospace' }}>{fmtBRL(c.spend)}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>{c.leads ?? '—'}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)', fontFamily:'monospace' }}>{fmtBRL(c.cpl)}</td>
+                        <td style={{ padding:'11px 14px', fontSize:13, color:'rgba(255,255,255,0.6)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>{c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {ai.conclusao && (
+            <div style={{ padding:'14px 18px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:10 }}>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.5)', lineHeight:1.7, fontStyle:'italic' }}>"{ai.conclusao}"</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function Reports() {
+  const [clients, setClients]         = useState([])
+  const [reports, setReports]         = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [generating, setGenerating]   = useState(false)
+  const [genError, setGenError]       = useState(null)
+  const [selectedClient, setSelectedClient] = useState('')
+  const [period, setPeriod]           = useState('last_30d')
+  const [viewReport, setViewReport]   = useState(null)
+
+  const loadReports = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/reports')
+      setReports(Array.isArray(data) ? data : [])
+    } catch { }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    api.get('/traffic/clients').then(r => { setClients(r.data); if (r.data[0]) setSelectedClient(String(r.data[0].id)) }).catch(() => {})
+    loadReports()
+  }, [loadReports])
+
+  const generate = async () => {
+    if (!selectedClient) return
+    setGenerating(true); setGenError(null)
+    try {
+      const { data } = await api.post('/reports/generate', { client_id: parseInt(selectedClient), period })
+      setReports(prev => [data, ...prev])
+      setViewReport(data)
+    } catch (err) {
+      setGenError(err.response?.data?.error || 'Erro ao gerar relatório')
+    }
+    setGenerating(false)
+  }
+
+  const deleteReport = async (id) => {
+    if (!confirm('Deletar este relatório?')) return
+    try {
+      await api.delete(`/reports/${id}`)
+      setReports(prev => prev.filter(r => r.id !== id))
+      if (viewReport?.id === id) setViewReport(null)
+    } catch { }
+  }
+
+  const openReport = async (report) => {
+    try {
+      const { data } = await api.get(`/reports/${report.id}`)
+      setViewReport(data)
+    } catch { setViewReport(report) }
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
+      <style>{`@keyframes spin { to { transform:rotate(360deg) } }`}</style>
+
+      {/* Header */}
+      <div style={{ padding:'24px 28px', flexShrink:0, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+          <div>
+            <h1 style={{ fontSize:22, fontWeight:700, color:'white', margin:0 }}>Relatórios</h1>
+            <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:4 }}>Gere e envie relatórios de desempenho para os clientes</p>
+          </div>
+
+          {/* Generator */}
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
+              style={{ background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 12px', color:'white', fontSize:12, outline:'none', cursor:'pointer' }}>
+              <option value="">Selecionar cliente</option>
+              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <div style={{ display:'flex', background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
+              {PERIODS.map(p => (
+                <button key={p.key} onClick={() => setPeriod(p.key)}
+                  style={{ padding:'7px 12px', border:'none', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all .15s', background: period === p.key ? '#a78bfa' : 'transparent', color: period === p.key ? 'white' : 'rgba(255,255,255,0.35)' }}>{p.label}</button>
+              ))}
+            </div>
+            <button onClick={generate} disabled={generating || !selectedClient}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 18px', borderRadius:8, background: selectedClient ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)', border:`1px solid ${selectedClient ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.08)'}`, color: selectedClient ? '#a78bfa' : 'rgba(255,255,255,0.3)', fontSize:12, fontWeight:700, cursor: selectedClient ? 'pointer' : 'default', opacity: generating ? 0.7 : 1, transition:'all .15s' }}>
+              {generating ? <><RefreshCw size={13} style={{ animation:'spin 1s linear infinite' }} /> Gerando...</> : <><Sparkles size={13} /> Gerar Relatório</>}
+            </button>
+          </div>
+        </div>
+
+        {genError && (
+          <div style={{ marginTop:12, padding:'10px 14px', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', borderRadius:8, color:'#f87171', fontSize:13 }}>
+            {genError}
+          </div>
+        )}
+      </div>
+
+      {/* Reports list */}
+      <div style={{ flex:1, overflowY:'auto', padding:'20px 28px' }}>
+        {loading ? (
+          <div style={{ display:'flex', justifyContent:'center', paddingTop:60 }}>
+            <RefreshCw size={20} color="rgba(255,255,255,0.2)" style={{ animation:'spin 1s linear infinite' }} />
+          </div>
+        ) : reports.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 0', color:'rgba(255,255,255,0.2)' }}>
+            <FileText size={28} style={{ margin:'0 auto 12px', opacity:0.3 }} />
+            <p style={{ fontSize:13 }}>Nenhum relatório gerado ainda.</p>
+            <p style={{ fontSize:12, marginTop:6 }}>Selecione um cliente e clique em "Gerar Relatório".</p>
+          </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:16 }}>
+            {reports.map(report => (
+              <div key={report.id}
+                style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:12, padding:'18px 20px', cursor:'pointer', transition:'all .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(167,139,250,0.3)'; e.currentTarget.style.background='rgba(167,139,250,0.04)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'; e.currentTarget.style.background='rgba(255,255,255,0.02)' }}
+                onClick={() => openReport(report)}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:12 }}>
+                  <div style={{ width:36, height:36, borderRadius:9, background:'rgba(167,139,250,0.12)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <FileText size={16} color="#a78bfa" />
+                  </div>
+                  <button onClick={e => { e.stopPropagation(); deleteReport(report.id) }}
+                    style={{ width:28, height:28, borderRadius:6, background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.15)', color:'#f87171', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+                <p style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.88)', marginBottom:4, lineHeight:1.4 }}>{report.title}</p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', marginBottom:10 }}>{report.client_name} · {fmtDate(report.created_at)}</p>
+                {report.summary && (
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.4)', lineHeight:1.6, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{report.summary}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {viewReport && <ReportView report={viewReport} onClose={() => setViewReport(null)} onDelete={deleteReport} />}
+    </div>
+  )
+}
