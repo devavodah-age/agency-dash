@@ -45,7 +45,7 @@ const CustomTooltip = ({ active, payload }) => {
 }
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('last_30d')
+  const [period, setPeriod] = useState('today')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
