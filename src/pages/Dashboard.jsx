@@ -75,7 +75,7 @@ export default function Dashboard() {
     return sort.dir === 'asc' ? av - bv : bv - av
   }) : []
 
-  const maxSpend = sorted.reduce((m, c) => Math.max(m, c.spend || 0), 0)
+  const totalSpend = sorted.reduce((sum, c) => sum + (c.spend || 0), 0)
 
   const stats = data ? [
     { label: 'Investimento Total', value: fmt(data.totals.spend, 'R$ '), icon: DollarSign, sub: 'período selecionado' },
@@ -209,7 +209,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {sorted.map((c, i) => {
-                  const pct = maxSpend > 0 ? ((c.spend || 0) / maxSpend) * 100 : 0
+                  const pct = totalSpend > 0 ? ((c.spend || 0) / totalSpend) * 100 : 0
                   return (
                     <tr key={c.id} className={`border-b border-surface-border/50 hover:bg-white/[0.02] transition-colors ${i === sorted.length - 1 ? 'border-0' : ''}`}>
                       <td className="px-5 py-4 text-white font-medium text-sm">{c.name}</td>
