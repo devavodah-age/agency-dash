@@ -48,6 +48,26 @@ function CplCell({ cpl }) {
   return <span style={{ color, fontWeight:600 }}>{fmtBRL(cpl)}</span>
 }
 
+function LazyThumb({ adId, onClick }) {
+  const [url, setUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    api.get(`/traffic/ads/${adId}/thumbnail`)
+      .then(r => setUrl(r.data.thumbnail_url))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [adId])
+  return (
+    <div onClick={onClick} style={{ cursor:'pointer', width:40, height:40, borderRadius:6, overflow:'hidden', background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title="Ver prévia">
+      {loading
+        ? <div style={{ width:40, height:40, background:'rgba(255,255,255,0.08)', borderRadius:6 }} />
+        : url
+          ? <img src={url} alt="" style={{ width:40, height:40, objectFit:'cover', display:'block' }} />
+          : <ImageOff size={14} color="rgba(255,255,255,0.2)" />}
+    </div>
+  )
+}
+
 function PriorityDot({ p }) {
   const c = { alta:'#f87171', media:'#facc15', baixa:'#4ade80' }[p] || '#6b7280'
   return <span style={{ width:7, height:7, borderRadius:'50%', background:c, display:'inline-block', flexShrink:0 }} />
@@ -457,12 +477,7 @@ export default function Traffic() {
 
                   {tab === 'ads' && (
                     <td style={{ padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', width:56 }}>
-                      <div onClick={() => setPreview(item)} style={{ cursor:'pointer', width:40, height:40, borderRadius:6, overflow:'hidden', background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title="Ver prévia">
-                        {item.thumbnail_url
-                          ? <img src={item.thumbnail_url} alt="" style={{ width:40, height:40, objectFit:'cover', display:'block' }} />
-                          : <ImageOff size={14} color="rgba(255,255,255,0.2)" />
-                        }
-                      </div>
+                      <LazyThumb adId={item.id} onClick={() => setPreview(item)} />
                     </td>
                   )}
 
