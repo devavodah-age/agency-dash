@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FileText, RefreshCw, Sparkles, Trash2, Download, X, TrendingUp, Users, MousePointer, DollarSign } from 'lucide-react'
+import { FileText, RefreshCw, Sparkles, Trash2, Download, X, TrendingUp, Users, MousePointer, DollarSign, Bot, Play, ToggleLeft, ToggleRight, Mail, Clock } from 'lucide-react'
 import api from '../lib/api'
 
 const PERIODS = [
@@ -198,6 +198,11 @@ export default function Reports() {
   const [selectedClient, setSelectedClient] = useState('')
   const [period, setPeriod]           = useState('last_30d')
   const [viewReport, setViewReport]   = useState(null)
+  const [activeTab, setActiveTab]     = useState('reports') // 'reports' | 'agent'
+  const [agentClients, setAgentClients] = useState([])
+  const [agentLoading, setAgentLoading] = useState(false)
+  const [running, setRunning]         = useState({})
+  const [editEmail, setEditEmail]     = useState({})
 
   const loadReports = useCallback(async () => {
     setLoading(true)
@@ -208,10 +213,54 @@ export default function Reports() {
     setLoading(false)
   }, [])
 
+  const loadAgentConfig = useCallback(async () => {
+    setAgentLoading(true)
+    try {
+      const { data } = await api.get('/agent/config')
+      setAgentClients(data)
+    } catch { }
+    setAgentLoading(false)
+  }, [])
+
   useEffect(() => {
     api.get('/traffic/clients').then(r => { setClients(r.data); if (r.data[0]) setSelectedClient(String(r.data[0].id)) }).catch(() => {})
     loadReports()
-  }, [loadReports])
+    loadAgentConfig()
+  }, [loadReports, loadAgentConfig])
+
+  const toggleAgent = async (client) => {
+    const newVal = !client.auto_report_enabled
+    setAgentClients(prev => prev.map(c => c.id === client.id ? { ...c, auto_report_enabled: newVal } : c))
+    try {
+      await api.put(`/agent/config/${client.id}`, { auto_report_enabled: newVal })
+    } catch { setAgentClients(prev => prev.map(c => c.id === client.id ? { ...c, auto_report_enabled: !newVal } : c)) }
+  }
+
+  const saveEmail = async (client) => {
+    const email = editEmail[client.id] !== undefined ? editEmail[client.id] : client.report_email
+    try {
+      const { data } = await api.put(`/agent/config/${client.id}`, { report_email: email })
+      setAgentClients(prev => prev.map(c => c.id === client.id ? { ...c, ...data } : c))
+      setEditEmail(e => { const n = {...e}; delete n[client.id]; return n })
+    } catch { }
+  }
+
+  const savePeriod = async (client, period) => {
+    try {
+      const { data } = await api.put(`/agent/config/${client.id}`, { report_period: period })
+      setAgentClients(prev => prev.map(c => c.id === client.id ? { ...c, ...data } : c))
+    } catch { }
+  }
+
+  const runNow = async (client) => {
+    setRunning(r => ({ ...r, [client.id]: true }))
+    try {
+      await api.post('/agent/run', { client_id: client.id })
+      await loadAgentConfig()
+      alert(`Relatório enviado para ${client.report_email || client.email}!`)
+    } catch (err) { alert(err.response?.data?.error || 'Erro ao executar agente') }
+    setRunning(r => ({ ...r, [client.id]: false }))
+  }
 
   const generate = async () => {
     if (!selectedClient) return
@@ -247,31 +296,41 @@ export default function Reports() {
       <style>{`@keyframes spin { to { transform:rotate(360deg) } }`}</style>
 
       {/* Header */}
-      <div style={{ padding:'24px 28px', flexShrink:0, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+      <div style={{ padding:'24px 28px 0', flexShrink:0, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:20 }}>
           <div>
             <h1 style={{ fontSize:22, fontWeight:700, color:'white', margin:0 }}>Relatórios</h1>
             <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:4 }}>Gere e envie relatórios de desempenho para os clientes</p>
           </div>
 
-          {/* Generator */}
-          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
-              style={{ background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 12px', color:'white', fontSize:12, outline:'none', cursor:'pointer' }}>
-              <option value="">Selecionar cliente</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <div style={{ display:'flex', background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
-              {PERIODS.map(p => (
-                <button key={p.key} onClick={() => setPeriod(p.key)}
-                  style={{ padding:'7px 12px', border:'none', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all .15s', background: period === p.key ? '#a78bfa' : 'transparent', color: period === p.key ? 'white' : 'rgba(255,255,255,0.35)' }}>{p.label}</button>
-              ))}
+          {activeTab === 'reports' && (
+            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+              <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
+                style={{ background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 12px', color:'white', fontSize:12, outline:'none', cursor:'pointer' }}>
+                <option value="">Selecionar cliente</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <div style={{ display:'flex', background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
+                {PERIODS.map(p => (
+                  <button key={p.key} onClick={() => setPeriod(p.key)}
+                    style={{ padding:'7px 12px', border:'none', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all .15s', background: period === p.key ? '#a78bfa' : 'transparent', color: period === p.key ? 'white' : 'rgba(255,255,255,0.35)' }}>{p.label}</button>
+                ))}
+              </div>
+              <button onClick={generate} disabled={generating || !selectedClient}
+                style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 18px', borderRadius:8, background: selectedClient ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)', border:`1px solid ${selectedClient ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.08)'}`, color: selectedClient ? '#a78bfa' : 'rgba(255,255,255,0.3)', fontSize:12, fontWeight:700, cursor: selectedClient ? 'pointer' : 'default', opacity: generating ? 0.7 : 1, transition:'all .15s' }}>
+                {generating ? <><RefreshCw size={13} style={{ animation:'spin 1s linear infinite' }} /> Gerando...</> : <><Sparkles size={13} /> Gerar Relatório</>}
+              </button>
             </div>
-            <button onClick={generate} disabled={generating || !selectedClient}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 18px', borderRadius:8, background: selectedClient ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)', border:`1px solid ${selectedClient ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.08)'}`, color: selectedClient ? '#a78bfa' : 'rgba(255,255,255,0.3)', fontSize:12, fontWeight:700, cursor: selectedClient ? 'pointer' : 'default', opacity: generating ? 0.7 : 1, transition:'all .15s' }}>
-              {generating ? <><RefreshCw size={13} style={{ animation:'spin 1s linear infinite' }} /> Gerando...</> : <><Sparkles size={13} /> Gerar Relatório</>}
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:0 }}>
+          {[{k:'reports',label:'Relatórios',icon:FileText},{k:'agent',label:'Automações',icon:Bot}].map(({k,label,icon:Icon}) => (
+            <button key={k} onClick={() => setActiveTab(k)} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 20px', border:'none', background:'none', cursor:'pointer', fontSize:13, fontWeight:600, transition:'all .15s', color: activeTab === k ? 'white' : 'rgba(255,255,255,0.3)', borderBottom: activeTab === k ? '2px solid #a78bfa' : '2px solid transparent', marginBottom:-1 }}>
+              <Icon size={14} /> {label}
             </button>
-          </div>
+          ))}
         </div>
 
         {genError && (
@@ -282,7 +341,7 @@ export default function Reports() {
       </div>
 
       {/* Reports list */}
-      <div style={{ flex:1, overflowY:'auto', padding:'20px 28px' }}>
+      {activeTab === 'reports' && <div style={{ flex:1, overflowY:'auto', padding:'20px 28px' }}>
         {loading ? (
           <div style={{ display:'flex', justifyContent:'center', paddingTop:60 }}>
             <RefreshCw size={20} color="rgba(255,255,255,0.2)" style={{ animation:'spin 1s linear infinite' }} />
@@ -319,7 +378,81 @@ export default function Reports() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
+
+      {/* Agent tab */}
+      {activeTab === 'agent' && (
+        <div style={{ flex:1, overflowY:'auto', padding:'20px 28px' }}>
+          <div style={{ marginBottom:20, padding:'14px 18px', background:'rgba(167,139,250,0.06)', border:'1px solid rgba(167,139,250,0.15)', borderRadius:10, display:'flex', alignItems:'center', gap:10 }}>
+            <Bot size={16} color="#a78bfa" />
+            <p style={{ fontSize:13, color:'rgba(255,255,255,0.6)', margin:0 }}>
+              O agente roda todo dia às <strong style={{color:'#a78bfa'}}>8h</strong> e envia o relatório automaticamente por email. Configure o email e o período por cliente abaixo.
+            </p>
+          </div>
+
+          {agentLoading ? (
+            <div style={{ display:'flex', justifyContent:'center', paddingTop:60 }}>
+              <RefreshCw size={20} color="rgba(255,255,255,0.2)" style={{ animation:'spin 1s linear infinite' }} />
+            </div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {agentClients.filter(c => c.meta_account_id).map(client => (
+                <div key={client.id} style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:12, padding:'16px 20px' }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                      {/* Toggle */}
+                      <button onClick={() => toggleAgent(client)} style={{ background:'none', border:'none', cursor:'pointer', color: client.auto_report_enabled ? '#4ade80' : 'rgba(255,255,255,0.2)', padding:0, display:'flex' }}>
+                        {client.auto_report_enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                      </button>
+                      <div>
+                        <p style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.88)', margin:0 }}>{client.name}</p>
+                        <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:2 }}>
+                          {client.auto_report_enabled ? <span style={{color:'#4ade80'}}>● Ativo</span> : <span>● Inativo</span>}
+                          {client.last_report_sent_at && <span> · Último envio: {fmtDate(client.last_report_sent_at)}</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                      {/* Period */}
+                      <select value={client.report_period || 'last_7d'} onChange={e => savePeriod(client, e.target.value)}
+                        style={{ background:'#1a1a1a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'6px 10px', color:'white', fontSize:11, outline:'none', cursor:'pointer' }}>
+                        {PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                      </select>
+
+                      {/* Email */}
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <Mail size={13} color="rgba(255,255,255,0.3)" />
+                        <input
+                          value={editEmail[client.id] !== undefined ? editEmail[client.id] : (client.report_email || client.email || '')}
+                          onChange={e => setEditEmail(prev => ({ ...prev, [client.id]: e.target.value }))}
+                          onBlur={() => saveEmail(client)}
+                          placeholder="email@cliente.com"
+                          style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, padding:'6px 10px', color:'white', fontSize:11, outline:'none', width:180 }}
+                        />
+                      </div>
+
+                      {/* Run now */}
+                      <button onClick={() => runNow(client)} disabled={running[client.id]}
+                        style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:8, background:'rgba(74,222,128,0.1)', border:'1px solid rgba(74,222,128,0.25)', color:'#4ade80', fontSize:11, fontWeight:700, cursor:'pointer', opacity: running[client.id] ? 0.6 : 1 }}>
+                        {running[client.id] ? <RefreshCw size={12} style={{ animation:'spin 1s linear infinite' }} /> : <Play size={12} />}
+                        Enviar agora
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {agentClients.filter(c => c.meta_account_id).length === 0 && (
+                <div style={{ textAlign:'center', padding:'60px 0', color:'rgba(255,255,255,0.2)' }}>
+                  <Bot size={28} style={{ margin:'0 auto 12px', opacity:0.3 }} />
+                  <p style={{ fontSize:13 }}>Nenhum cliente com conta Meta configurada.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {viewReport && <ReportView report={viewReport} onClose={() => setViewReport(null)} onDelete={deleteReport} />}
     </div>
