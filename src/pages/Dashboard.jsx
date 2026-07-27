@@ -14,8 +14,8 @@ const COLS = [
   { key: 'name',   label: 'Cliente' },
   { key: 'spend',  label: 'Investido' },
   { key: 'clicks', label: 'Cliques' },
-  { key: 'leads',  label: 'Leads' },
-  { key: 'cpl',    label: 'CPL' },
+  { key: 'results',  label: 'Resultados' },
+  { key: 'cost_per_result', label: 'Custo/Res.' },
 ]
 
 function fmt(val, prefix = '') {
@@ -80,8 +80,8 @@ export default function Dashboard() {
   const stats = data ? [
     { label: 'Investimento Total', value: fmt(data.totals.spend, 'R$ '), icon: DollarSign, sub: 'período selecionado' },
     { label: 'Clientes', value: fmtInt(data.total_clients), icon: Users, sub: `${data.active_clients} com gastos no período` },
-    { label: 'Leads', value: fmtInt(data.totals.leads), icon: Target, sub: 'conversões registradas' },
-    { label: 'CPL Médio', value: fmt(data.totals.cpl, 'R$ '), icon: TrendingUp, sub: 'custo por lead' },
+    { label: 'Resultados', value: fmtInt(data.totals.results ?? data.totals.leads), icon: Target, sub: 'total no período' },
+    { label: 'Custo/Resultado', value: fmt(data.totals.cost_per_result ?? data.totals.cpl, 'R$ '), icon: TrendingUp, sub: 'custo médio por resultado' },
     { label: 'Cliques', value: fmtInt(data.totals.clicks), icon: MousePointer, sub: 'total no período' },
   ] : []
 
@@ -215,10 +215,10 @@ export default function Dashboard() {
                       <td className="px-5 py-4 text-white font-medium text-sm">{c.name}</td>
                       <td className="px-5 py-4 text-white text-sm font-mono">{fmt(c.spend, 'R$ ')}</td>
                       <td className="px-5 py-4 text-brand-dim text-sm">{fmtInt(c.clicks)}</td>
-                      <td className="px-5 py-4 text-brand-dim text-sm">{fmtInt(c.leads)}</td>
+                      <td className="px-5 py-4 text-brand-dim text-sm">{fmtInt(c.results ?? c.leads)}</td>
                       <td className="px-5 py-4 text-sm">
-                        <span className="font-medium" style={{ color: cplColor(c.cpl) }}>
-                          {fmt(c.cpl, 'R$ ')}
+                        <span className="font-medium" style={{ color: cplColor(c.cost_per_result ?? c.cpl) }}>
+                          {fmt(c.cost_per_result ?? c.cpl, 'R$ ')}
                         </span>
                       </td>
                       <td className="px-5 py-4">
@@ -240,3 +240,4 @@ export default function Dashboard() {
     </div>
   )
 }
+
