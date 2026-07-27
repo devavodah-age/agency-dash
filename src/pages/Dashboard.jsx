@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   const stats = data ? [
     { label: 'Investimento Total', value: fmt(data.totals.spend, 'R$ '), icon: DollarSign, sub: 'período selecionado' },
-    { label: 'Clientes Ativos', value: `${data.active_clients} / ${data.total_clients}`, icon: Users, sub: 'com gastos no período' },
+    { label: 'Clientes', value: fmtInt(data.total_clients), icon: Users, sub: `${data.active_clients} com gastos no período` },
     { label: 'Leads', value: fmtInt(data.totals.leads), icon: Target, sub: 'conversões registradas' },
     { label: 'CPL Médio', value: fmt(data.totals.cpl, 'R$ '), icon: TrendingUp, sub: 'custo por lead' },
     { label: 'Cliques', value: fmtInt(data.totals.clicks), icon: MousePointer, sub: 'total no período' },
