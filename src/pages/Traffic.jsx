@@ -258,6 +258,8 @@ export default function Traffic() {
   const [preview, setPreview]           = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch]             = useState('')
+  const [drillCampaign, setDrillCampaign] = useState(null)
+  const [drillAdset, setDrillAdset]       = useState(null)
 
   useEffect(() => { api.get('/traffic/clients').then(r => setClients(r.data)).catch(() => {}) }, [])
 
@@ -310,6 +312,8 @@ export default function Traffic() {
     if (statusFilter === 'active' && item.effective_status !== 'ACTIVE') return false
     if (statusFilter === 'paused' && item.effective_status !== 'PAUSED') return false
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (tab === 'adsets' && drillCampaign && item.campaign_id !== drillCampaign.id) return false
+    if (tab === 'ads' && drillAdset && item.adset_id !== drillAdset.id) return false
     return true
   })
 
@@ -350,7 +354,7 @@ export default function Traffic() {
         </div>
         <div style={{ display:'flex', gap:0, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ padding:'10px 20px', border:'none', background:'none', cursor:'pointer', fontSize:13, fontWeight:600, transition:'all .15s', color: tab === t.key ? 'white' : 'rgba(255,255,255,0.3)', borderBottom: tab === t.key ? '2px solid #a78bfa' : '2px solid transparent', marginBottom:-1 }}>{t.label}</button>
+            <button key={t.key} onClick={() => { setTab(t.key); setDrillCampaign(null); setDrillAdset(null) }} style={{ padding:'10px 20px', border:'none', background:'none', cursor:'pointer', fontSize:13, fontWeight:600, transition:'all .15s', color: tab === t.key ? 'white' : 'rgba(255,255,255,0.3)', borderBottom: tab === t.key ? '2px solid #a78bfa' : '2px solid transparent', marginBottom:-1 }}>{t.label}</button>
           ))}
         </div>
 
@@ -386,6 +390,25 @@ export default function Traffic() {
           )}
         </div>
       </div>
+
+      {/* Breadcrumb drill-down */}
+      {(drillCampaign || drillAdset) && (
+        <div style={{ padding:'8px 28px 0', display:'flex', alignItems:'center', gap:6, flexShrink:0, flexWrap:'wrap' }}>
+          <button onClick={() => { setTab('campaigns'); setDrillCampaign(null); setDrillAdset(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#a78bfa', fontSize:12, fontWeight:600, padding:0 }}>Campanhas</button>
+          {drillCampaign && (
+            <>
+              <span style={{ color:'rgba(255,255,255,0.2)', fontSize:12 }}>›</span>
+              <button onClick={() => { setTab('adsets'); setDrillAdset(null) }} style={{ background:'none', border:'none', cursor:'pointer', color: drillAdset ? '#a78bfa' : 'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, padding:0, maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{drillCampaign.name}</button>
+            </>
+          )}
+          {drillAdset && (
+            <>
+              <span style={{ color:'rgba(255,255,255,0.2)', fontSize:12 }}>›</span>
+              <span style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{drillAdset.name}</span>
+            </>
+          )}
+        </div>
+      )}
 
       {error && (
         <div style={{ margin:'12px 28px 0', padding:'12px 16px', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', borderRadius:10, color:'#f87171', fontSize:13, display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
@@ -482,7 +505,17 @@ export default function Traffic() {
                   )}
 
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', maxWidth:260 }}>
-                    <p style={{ fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.88)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={item.name}>{item.name}</p>
+                    <p
+                      onClick={tab === 'campaigns' ? () => { setDrillCampaign(item); setDrillAdset(null); setTab('adsets') }
+                              : tab === 'adsets' ? () => { setDrillAdset(item); setTab('ads') }
+                              : undefined}
+                      title={item.name}
+                      style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                        color: tab === 'ads' ? 'rgba(255,255,255,0.88)' : '#a78bfa',
+                        cursor: tab === 'ads' ? 'default' : 'pointer',
+                        textDecoration: tab === 'ads' ? 'none' : 'underline',
+                        textUnderlineOffset: 2 }}
+                    >{item.name}</p>
                     <p style={{ fontSize:10, color:'rgba(255,255,255,0.22)', marginTop:2, letterSpacing:0.5 }}>
                       {tab === 'campaigns' && (OBJ_LABEL[item.objective] || item.objective || '—')}
                       {tab === 'adsets' && (OPT_LABEL[item.optimization_goal] || item.optimization_goal || '—')}
