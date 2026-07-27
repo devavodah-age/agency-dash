@@ -213,8 +213,8 @@ function PreviewModal({ item, onClose }) {
                 { label:'Gasto',       value: item.spend > 0 ? fmtBRL(item.spend) : '—' },
                 { label:'Impressões',  value: fmtInt(item.impressions) },
                 { label:'Cliques',     value: fmtInt(item.clicks) },
-                { label:'Leads',       value: fmtInt(item.leads) },
-                { label:'CPL',         value: item.cpl != null ? fmtBRL(item.cpl) : '—' },
+                { label:'Resultados',  value: fmtInt(item.results ?? item.leads) },
+                { label:'Custo/Res.', value: (item.cost_per_result ?? item.cpl) != null ? fmtBRL(item.cost_per_result ?? item.cpl) : '—' },
                 { label:'CTR',         value: item.ctr != null ? Number(item.ctr).toFixed(2) + '%' : '—' },
                 { label:'CPC',         value: item.cpc != null ? fmtBRL(item.cpc) : '—' },
               ].map(({ label, value }) => (
@@ -485,8 +485,8 @@ export default function Traffic() {
                 <TH right>Gasto</TH>
                 <TH right>Impressões</TH>
                 <TH right>Cliques</TH>
-                <TH right>Leads</TH>
-                <TH right>CPL</TH>
+                <TH right>Resultados</TH>
+                <TH right>Custo/Res.</TH>
                 <TH right>CTR</TH>
                 <TH right>Ações</TH>
               </tr>
@@ -535,8 +535,8 @@ export default function Traffic() {
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.85)', whiteSpace:'nowrap' }}>{fmtBRL(item.spend)}</td>
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.4)', whiteSpace:'nowrap' }}>{fmtInt(item.impressions)}</td>
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap' }}>{fmtInt(item.clicks)}</td>
-                  <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.4)', whiteSpace:'nowrap' }}>{fmtInt(item.leads)}</td>
-                  <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', whiteSpace:'nowrap' }}><CplCell cpl={item.cpl} /></td>
+                  <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.4)', whiteSpace:'nowrap' }}>{fmtInt(item.results ?? item.leads)}</td>
+                  <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', whiteSpace:'nowrap' }}><CplCell cpl={item.cost_per_result ?? item.cpl} /></td>
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', fontFamily:'monospace', fontSize:13, color:'rgba(255,255,255,0.4)', whiteSpace:'nowrap' }}>{item.ctr != null ? Number(item.ctr).toFixed(2) + '%' : '—'}</td>
                   <td style={{ padding:'13px 16px', borderBottom:'1px solid rgba(255,255,255,0.04)', textAlign:'right', whiteSpace:'nowrap' }}>
                     <ActionBtns item={item} level={tab} toggling={toggling} setToggling={setToggling} scaling={scaling} setScaling={setScaling} scaleOpen={scaleOpen} setScaleOpen={setScaleOpen} customBudget={customBudget} setCustomBudget={setCustomBudget} setData={setCurrentData} />
@@ -552,3 +552,4 @@ export default function Traffic() {
     </div>
   )
 }
+
