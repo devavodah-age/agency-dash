@@ -41,76 +41,84 @@ function ReportView({ report, onClose, onDelete }) {
     const win = window.open('', '_blank')
     const topRows = (m.top_campaigns||[]).map(c=>`
       <tr>
-        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.8)">${c.name}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6);font-family:monospace">R$ ${Number(c.spend||0).toFixed(2).replace('.',',')}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.leads||0}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2).replace('.',',') : '—'}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#222;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444;font-weight:600">R$ ${Number(c.spend||0).toFixed(2).replace('.',',')}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.leads||0}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2).replace('.',',') : '—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#444">${c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
       </tr>`).join('')
+
     win.document.write(`<!DOCTYPE html><html><head><title>${report.title}</title>
     <style>
       * { margin:0; padding:0; box-sizing:border-box; }
-      body { background:#0d0d0d; color:#fff; font-family:Arial,sans-serif; padding:40px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      .header { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:24px 28px; margin-bottom:20px; }
-      .label { font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
-      h1 { font-size:22px; font-weight:700; color:#fff; }
-      .sub { font-size:12px; color:rgba(255,255,255,0.3); margin-top:6px; }
-      .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-      .metric { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; }
-      .metric-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-      .metric-lbl { font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
-      .metric-val { font-size:18px; font-weight:700; color:#fff; }
-      .card { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:18px 20px; margin-bottom:16px; }
-      .card-title { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
-      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+      body { background:#fff; color:#111; font-family:Arial,sans-serif; max-width:760px; margin:0 auto; padding:48px 40px; }
+      .header-bar { background:#0d0d0d; border-radius:12px; padding:28px 32px; margin-bottom:28px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .header-bar .agency { font-size:10px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+      .header-bar .manchete { font-size:26px; font-weight:700; color:#fff; margin-bottom:6px; line-height:1.3; }
+      .header-bar .subtitle { font-size:13px; color:rgba(255,255,255,0.45); }
+      .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+      .metric { border:2px solid #f0f0f0; border-radius:10px; padding:14px 16px; }
+      .metric .lbl { font-size:9px; color:#888; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; font-weight:600; }
+      .metric .val { font-size:20px; font-weight:700; color:#111; }
+      .metric.purple { border-color:#7c3aed; }
+      .metric.purple .lbl { color:#7c3aed; }
+      .section { margin-bottom:20px; }
+      .section-title { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding-bottom:8px; border-bottom:2px solid #f0f0f0; margin-bottom:14px; color:#555; }
+      .resumo { background:#faf8ff; border-left:4px solid #7c3aed; border-radius:0 8px 8px 0; padding:16px 18px; margin-bottom:20px; }
+      .resumo p { font-size:14px; color:#333; line-height:1.75; }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+      .card-green { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px 18px; }
+      .card-yellow { background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:16px 18px; }
+      .card-title-green { font-size:10px; font-weight:700; color:#16a34a; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+      .card-title-yellow { font-size:10px; font-weight:700; color:#d97706; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
       ul { list-style:none; padding:0; }
-      li { display:flex; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:8px; }
+      li { font-size:13px; color:#333; line-height:1.6; margin-bottom:8px; padding-left:18px; position:relative; }
+      li::before { position:absolute; left:0; }
+      li.green::before { content:"✓"; color:#16a34a; font-weight:700; }
+      li.yellow::before { content:"→"; color:#d97706; font-weight:700; }
       table { width:100%; border-collapse:collapse; }
-      th { padding:10px 14px; text-align:left; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
-      .footer { margin-top:28px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06); font-size:11px; color:rgba(255,255,255,0.2); text-align:center; }
-      @media print { body { padding:20px; } }
+      th { padding:10px 14px; text-align:left; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#888; background:#f9f9f9; border-bottom:2px solid #eee; }
+      .conclusao { font-size:13px; color:#555; line-height:1.7; font-style:italic; border-top:1px solid #f0f0f0; padding-top:20px; margin-top:4px; }
+      .footer { margin-top:36px; padding-top:16px; border-top:1px solid #eee; font-size:11px; color:#aaa; text-align:center; }
+      @media print { body { padding:24px 28px; } .header-bar { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
     </style></head><body>
-    <div class="header">
-      <div class="label">Agência Avodah · Relatório de Performance</div>
-      <h1>${report.title}</h1>
-      <div class="sub">Período: ${report.period_label || report.period} · Gerado em ${fmtDate(report.created_at)}</div>
+
+    <div class="header-bar">
+      <div class="agency">Agência Avodah · Relatório de Performance</div>
+      <div class="manchete">${ai.manchete || report.title}</div>
+      <div class="subtitle">${report.period_label || report.period} &nbsp;·&nbsp; Gerado em ${fmtDate(report.created_at)}</div>
     </div>
 
     <div class="metrics">
-      <div class="metric"><div class="metric-icon" style="background:rgba(167,139,250,0.15)">💰</div><div><div class="metric-lbl">Investimento</div><div class="metric-val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div></div>
-      <div class="metric"><div class="metric-icon" style="background:rgba(74,222,128,0.15)">👥</div><div><div class="metric-lbl">Leads</div><div class="metric-val">${m.total_leads||0}</div></div></div>
-      <div class="metric"><div class="metric-icon" style="background:rgba(250,204,21,0.15)">📈</div><div><div class="metric-lbl">CPL Médio</div><div class="metric-val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div></div>
-      <div class="metric"><div class="metric-icon" style="background:rgba(96,165,250,0.15)">🖱️</div><div><div class="metric-lbl">Cliques</div><div class="metric-val">${Number(m.total_clicks||0).toLocaleString('pt-BR')}</div></div></div>
+      <div class="metric purple"><div class="lbl">Valor investido</div><div class="val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div>
+      <div class="metric"><div class="lbl">Contatos gerados</div><div class="val">${m.total_leads||0}</div></div>
+      <div class="metric"><div class="lbl">Custo por contato</div><div class="val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div>
+      <div class="metric"><div class="lbl">Cliques nos anúncios</div><div class="val">${Number(m.total_clicks||0).toLocaleString('pt-BR')}</div></div>
     </div>
 
-    ${ai.resumo_executivo ? `<div class="card" style="border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.05)">
-      <div class="card-title" style="color:#a78bfa">✦ Resumo Executivo</div>
-      <p style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.7">${ai.resumo_executivo}</p>
-    </div>` : ''}
+    ${ai.resumo_executivo ? `<div class="resumo"><p>${ai.resumo_executivo}</p></div>` : ''}
 
     <div class="grid2">
-      ${ai.destaques?.length ? `<div class="card" style="border-color:rgba(74,222,128,0.15);background:rgba(74,222,128,0.04)">
-        <div class="card-title" style="color:#4ade80">✓ Destaques</div>
-        <ul>${ai.destaques.map(d=>`<li><span style="color:#4ade80;flex-shrink:0">✓</span>${d}</li>`).join('')}</ul>
+      ${ai.destaques?.length ? `<div class="card-green">
+        <div class="card-title-green">✓ Destaques do período</div>
+        <ul>${ai.destaques.map(d=>`<li class="green">${d}</li>`).join('')}</ul>
       </div>` : ''}
-      ${ai.recomendacoes?.length ? `<div class="card" style="border-color:rgba(250,204,21,0.15);background:rgba(250,204,21,0.04)">
-        <div class="card-title" style="color:#facc15">→ Recomendações</div>
-        <ul>${ai.recomendacoes.map(r=>`<li><span style="color:#facc15;flex-shrink:0">→</span>${r}</li>`).join('')}</ul>
+      ${ai.recomendacoes?.length ? `<div class="card-yellow">
+        <div class="card-title-yellow">→ O que fazer agora</div>
+        <ul>${ai.recomendacoes.map(r=>`<li class="yellow">${r}</li>`).join('')}</ul>
       </div>` : ''}
     </div>
 
-    ${m.top_campaigns?.length ? `<div class="card">
-      <div class="card-title" style="color:rgba(255,255,255,0.3)">Campanhas em Destaque</div>
+    ${m.top_campaigns?.length ? `<div class="section">
+      <div class="section-title">Campanhas em destaque</div>
       <table><thead><tr>
-        <th>Campanha</th><th>Gasto</th><th>Leads</th><th>CPL</th><th>CTR</th>
+        <th>Campanha</th><th>Valor investido</th><th>Contatos gerados</th><th>Custo por contato</th><th>Taxa de cliques</th>
       </tr></thead><tbody>${topRows}</tbody></table>
     </div>` : ''}
 
-    ${ai.conclusao ? `<div class="card" style="background:rgba(255,255,255,0.02)">
-      <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;font-style:italic">"${ai.conclusao}"</p>
-    </div>` : ''}
+    ${ai.conclusao ? `<p class="conclusao">"${ai.conclusao}"</p>` : ''}
 
-    <div class="footer">Relatório gerado pela Agência Avodah · ${report.title}</div>
+    <div class="footer">Relatório gerado pela Agência Avodah &nbsp;·&nbsp; ${report.title}</div>
     </body></html>`)
     win.document.close()
     win.print()
@@ -123,7 +131,7 @@ function ReportView({ report, onClose, onDelete }) {
         <div style={{ padding:'20px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
             <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:4 }}>Relatório · {report.period_label || report.period}</p>
-            <h2 style={{ fontSize:18, fontWeight:700, color:'white', margin:0 }}>{report.title}</h2>
+            <h2 style={{ fontSize:18, fontWeight:700, color:'white', margin:0 }}>{ai.manchete || report.title}</h2>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={printReport} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)', fontSize:12, fontWeight:600, cursor:'pointer' }}>
@@ -142,10 +150,10 @@ function ReportView({ report, onClose, onDelete }) {
         <div style={{ padding:'24px' }}>
           {/* Metrics grid */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:24 }}>
-            <MetricCard icon={DollarSign} label="Investimento" value={fmtBRL(m.total_spend)} color="#a78bfa" />
-            <MetricCard icon={Users}       label="Leads"        value={fmtInt(m.total_leads)} color="#4ade80" />
-            <MetricCard icon={TrendingUp}  label="CPL Médio"    value={fmtBRL(m.avg_cpl)}    color="#facc15" />
-            <MetricCard icon={MousePointer} label="Cliques"     value={fmtInt(m.total_clicks)} color="#60a5fa" />
+            <MetricCard icon={DollarSign} label="Valor investido"      value={fmtBRL(m.total_spend)} color="#a78bfa" />
+            <MetricCard icon={Users}       label="Contatos gerados"    value={fmtInt(m.total_leads)} color="#4ade80" />
+            <MetricCard icon={TrendingUp}  label="Custo por contato"   value={fmtBRL(m.avg_cpl)}    color="#facc15" />
+            <MetricCard icon={MousePointer} label="Cliques nos anúncios" value={fmtInt(m.total_clicks)} color="#60a5fa" />
           </div>
 
           {/* AI content */}
