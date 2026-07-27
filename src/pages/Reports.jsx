@@ -39,42 +39,79 @@ function ReportView({ report, onClose, onDelete }) {
 
   const printReport = () => {
     const win = window.open('', '_blank')
-    win.document.write(`
-      <html><head><title>${report.title}</title>
-      <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #111; }
-        h1 { font-size: 24px; margin-bottom: 4px; }
-        .sub { color: #666; font-size: 14px; margin-bottom: 32px; }
-        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-        .metric { background: #f5f5f5; border-radius: 8px; padding: 16px; text-align: center; }
-        .metric .val { font-size: 22px; font-weight: 700; margin-top: 8px; }
-        .metric .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .section { margin-bottom: 24px; }
-        .section h2 { font-size: 16px; border-bottom: 2px solid #a78bfa; padding-bottom: 8px; margin-bottom: 16px; color: #6d28d9; }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 8px; line-height: 1.6; }
-        p { line-height: 1.8; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th { background: #f0f0f0; padding: 10px; text-align: left; font-size: 12px; }
-        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; }
-      </style></head><body>
+    const topRows = (m.top_campaigns||[]).map(c=>`
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.8)">${c.name}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6);font-family:monospace">R$ ${Number(c.spend||0).toFixed(2).replace('.',',')}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.leads||0}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2).replace('.',',') : '—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;color:rgba(255,255,255,0.6)">${c.ctr != null ? Number(c.ctr).toFixed(2)+'%' : '—'}</td>
+      </tr>`).join('')
+    win.document.write(`<!DOCTYPE html><html><head><title>${report.title}</title>
+    <style>
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { background:#0d0d0d; color:#fff; font-family:Arial,sans-serif; padding:40px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .header { background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:24px 28px; margin-bottom:20px; }
+      .label { font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+      h1 { font-size:22px; font-weight:700; color:#fff; }
+      .sub { font-size:12px; color:rgba(255,255,255,0.3); margin-top:6px; }
+      .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+      .metric { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; }
+      .metric-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+      .metric-lbl { font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+      .metric-val { font-size:18px; font-weight:700; color:#fff; }
+      .card { background:#111; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:18px 20px; margin-bottom:16px; }
+      .card-title { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+      ul { list-style:none; padding:0; }
+      li { display:flex; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:8px; }
+      table { width:100%; border-collapse:collapse; }
+      th { padding:10px 14px; text-align:left; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
+      .footer { margin-top:28px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06); font-size:11px; color:rgba(255,255,255,0.2); text-align:center; }
+      @media print { body { padding:20px; } }
+    </style></head><body>
+    <div class="header">
+      <div class="label">Agência Avodah · Relatório de Performance</div>
       <h1>${report.title}</h1>
-      <p class="sub">Agência Avodah · Gerado em ${fmtDate(report.created_at)}</p>
-      <div class="metrics">
-        <div class="metric"><div class="lbl">Investimento</div><div class="val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div>
-        <div class="metric"><div class="lbl">Leads</div><div class="val">${m.total_leads||0}</div></div>
-        <div class="metric"><div class="lbl">CPL médio</div><div class="val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div>
-        <div class="metric"><div class="lbl">Cliques</div><div class="val">${m.total_clicks||0}</div></div>
-      </div>
-      ${ai.resumo_executivo ? `<div class="section"><h2>Resumo Executivo</h2><p>${ai.resumo_executivo}</p></div>` : ''}
-      ${ai.destaques?.length ? `<div class="section"><h2>Destaques</h2><ul>${ai.destaques.map(d=>`<li>${d}</li>`).join('')}</ul></div>` : ''}
-      ${ai.recomendacoes?.length ? `<div class="section"><h2>Recomendações</h2><ul>${ai.recomendacoes.map(r=>`<li>${r}</li>`).join('')}</ul></div>` : ''}
-      ${m.top_campaigns?.length ? `<div class="section"><h2>Campanhas em Destaque</h2><table><tr><th>Campanha</th><th>Gasto</th><th>Leads</th><th>CPL</th></tr>${m.top_campaigns.map(c=>`<tr><td>${c.name}</td><td>R$ ${Number(c.spend||0).toFixed(2)}</td><td>${c.leads||0}</td><td>${c.cpl ? 'R$ '+Number(c.cpl).toFixed(2) : '—'}</td></tr>`).join('')}</table></div>` : ''}
-      ${ai.conclusao ? `<div class="section"><h2>Conclusão</h2><p>${ai.conclusao}</p></div>` : ''}
-      <div class="footer">Relatório gerado pela Agência Avodah · ${report.title}</div>
-      </body></html>
-    `)
+      <div class="sub">Período: ${report.period_label || report.period} · Gerado em ${fmtDate(report.created_at)}</div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-icon" style="background:rgba(167,139,250,0.15)">💰</div><div><div class="metric-lbl">Investimento</div><div class="metric-val">R$ ${Number(m.total_spend||0).toFixed(2).replace('.',',')}</div></div></div>
+      <div class="metric"><div class="metric-icon" style="background:rgba(74,222,128,0.15)">👥</div><div><div class="metric-lbl">Leads</div><div class="metric-val">${m.total_leads||0}</div></div></div>
+      <div class="metric"><div class="metric-icon" style="background:rgba(250,204,21,0.15)">📈</div><div><div class="metric-lbl">CPL Médio</div><div class="metric-val">${m.avg_cpl ? 'R$ '+Number(m.avg_cpl).toFixed(2).replace('.',',') : '—'}</div></div></div>
+      <div class="metric"><div class="metric-icon" style="background:rgba(96,165,250,0.15)">🖱️</div><div><div class="metric-lbl">Cliques</div><div class="metric-val">${Number(m.total_clicks||0).toLocaleString('pt-BR')}</div></div></div>
+    </div>
+
+    ${ai.resumo_executivo ? `<div class="card" style="border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.05)">
+      <div class="card-title" style="color:#a78bfa">✦ Resumo Executivo</div>
+      <p style="font-size:14px;color:rgba(255,255,255,0.75);line-height:1.7">${ai.resumo_executivo}</p>
+    </div>` : ''}
+
+    <div class="grid2">
+      ${ai.destaques?.length ? `<div class="card" style="border-color:rgba(74,222,128,0.15);background:rgba(74,222,128,0.04)">
+        <div class="card-title" style="color:#4ade80">✓ Destaques</div>
+        <ul>${ai.destaques.map(d=>`<li><span style="color:#4ade80;flex-shrink:0">✓</span>${d}</li>`).join('')}</ul>
+      </div>` : ''}
+      ${ai.recomendacoes?.length ? `<div class="card" style="border-color:rgba(250,204,21,0.15);background:rgba(250,204,21,0.04)">
+        <div class="card-title" style="color:#facc15">→ Recomendações</div>
+        <ul>${ai.recomendacoes.map(r=>`<li><span style="color:#facc15;flex-shrink:0">→</span>${r}</li>`).join('')}</ul>
+      </div>` : ''}
+    </div>
+
+    ${m.top_campaigns?.length ? `<div class="card">
+      <div class="card-title" style="color:rgba(255,255,255,0.3)">Campanhas em Destaque</div>
+      <table><thead><tr>
+        <th>Campanha</th><th>Gasto</th><th>Leads</th><th>CPL</th><th>CTR</th>
+      </tr></thead><tbody>${topRows}</tbody></table>
+    </div>` : ''}
+
+    ${ai.conclusao ? `<div class="card" style="background:rgba(255,255,255,0.02)">
+      <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;font-style:italic">"${ai.conclusao}"</p>
+    </div>` : ''}
+
+    <div class="footer">Relatório gerado pela Agência Avodah · ${report.title}</div>
+    </body></html>`)
     win.document.close()
     win.print()
   }
