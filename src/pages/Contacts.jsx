@@ -6,8 +6,8 @@ const CLIENTS = [
     id: 'kaique',
     name: 'Kaique Motos',
     color: '#a78bfa',
-    apiUrl: import.meta.env.VITE_KAIQUE_API_URL || 'https://horoscopo-api-production.up.railway.app',
-    endpoint: '/api/kaique/leads',
+    apiUrl: import.meta.env.VITE_KAIQUE_API_URL || 'https://kaique-api-production.up.railway.app',
+    endpoint: '/api/leads',
   },
   // future clients go here
 ]
