@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
+import Contacts from './pages/Contacts'
 import Traffic from './pages/Traffic'
 import Tickets from './pages/Tickets'
 import Reports from './pages/Reports'
@@ -52,6 +53,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="traffic" element={<Traffic />} />
             <Route path="clients" element={<Clients />} />
+            <Route path="contacts" element={<Contacts />} />
             <Route path="integrations" element={<Integrations />} />
             <Route path="tickets" element={<Tickets />} />
             <Route path="reports" element={<Reports />} />
